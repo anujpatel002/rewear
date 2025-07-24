@@ -16,7 +16,7 @@ export default function AdminUserPanel() {
     try {
       const res = await fetch('/api/admin/users');
       const data = await res.json();
-      setUsers(data.users || []);
+      setUsers((data.users || []).filter(u => u.email !== 'admin@gmail.com'));
     } catch {
       toast.error('Failed to load users');
     }

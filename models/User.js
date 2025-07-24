@@ -30,11 +30,16 @@ const userSchema = new mongoose.Schema({
   type: Boolean,
   default: false,
 },
-role: {
-  type: String,
-  enum: ['user', 'admin'],
-  default: 'user'
-},
+  profilePic: {
+    type: String,
+    default: '',
+  },
+  address: {
+    country: { type: String, default: '' },
+    state: { type: String, default: '' },
+    city: { type: String, default: '' },
+    pinCode: { type: String, default: '' },
+  },
   createdAt: {
     type: Date,
     default: Date.now

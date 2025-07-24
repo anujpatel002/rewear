@@ -4,12 +4,18 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { fetchSession } from '@/utils/session';
 
 export default function ItemDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [swapStatus, setSwapStatus] = useState(null);
+  const [swapLoading, setSwapLoading] = useState(false);
+  const [sessionUser, setSessionUser] = useState(null);
+  const [hasPendingSwap, setHasPendingSwap] = useState(false);
+  const [isSwapped, setIsSwapped] = useState(false);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -32,6 +38,49 @@ export default function ItemDetailPage() {
       fetchItem();
     }
   }, [id]);
+
+  useEffect(() => {
+    fetchSession().then(setSessionUser);
+  }, []);
+
+  useEffect(() => {
+    const checkPendingSwap = async () => {
+      if (!sessionUser || !item || !item._id) return;
+      try {
+        const res = await fetch('/api/item/user');
+        const data = await res.json();
+        if (res.ok && data.swapsAsRequester) {
+          const foundPending = data.swapsAsRequester.find(
+            swap => swap.item && swap.item._id === item._id && swap.status === 'pending'
+          );
+          setHasPendingSwap(!!foundPending);
+          const foundApproved = data.swapsAsRequester.find(
+            swap => swap.item && swap.item._id === item._id && swap.status === 'approved'
+          );
+          setIsSwapped(!!foundApproved);
+        }
+      } catch {}
+    };
+    checkPendingSwap();
+  }, [sessionUser, item]);
+
+  const handleSwap = async () => {
+    setSwapLoading(true);
+    setSwapStatus(null);
+    try {
+      const res = await fetch(`/api/item/${id}`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setSwapStatus('Swap request sent!');
+      } else {
+        setSwapStatus(data.error || 'Swap failed');
+      }
+    } catch (err) {
+      setSwapStatus('Swap failed');
+    } finally {
+      setSwapLoading(false);
+    }
+  };
 
   if (loading) return <div className="text-center mt-20">Loading item details...</div>;
 
@@ -80,18 +129,23 @@ export default function ItemDetailPage() {
         {/* Action Buttons */}
         <div className="mt-6 flex gap-4">
           <button
-            onClick={() => alert('Swap request initiated!')}
-            className="bg-indigo-600 text-white px-5 py-2 rounded hover:bg-indigo-700"
+            onClick={handleSwap}
+            disabled={swapLoading || hasPendingSwap || isSwapped || (sessionUser && item.uploadedBy && sessionUser.email === item.uploadedBy.email)}
+            className={`bg-indigo-600 text-white px-5 py-2 rounded hover:bg-indigo-700 ${swapLoading || hasPendingSwap || isSwapped ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            Swap Item
+            {isSwapped ? 'Not Available' : swapLoading ? 'Requesting...' : hasPendingSwap ? 'Already Requested' : 'Swap Item'}
           </button>
           <button
             onClick={() => alert('Purchase with points feature coming soon!')}
-            className="bg-emerald-600 text-white px-5 py-2 rounded hover:bg-emerald-700"
+            disabled={isSwapped}
+            className={`bg-emerald-600 text-white px-5 py-2 rounded hover:bg-emerald-700 ${isSwapped ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Buy with Points
           </button>
         </div>
+        {isSwapped && <div className="mt-2 text-sm text-red-600">This item is no longer available for swap or purchase.</div>}
+        {hasPendingSwap && !isSwapped && <div className="mt-2 text-sm text-red-600">You already sent a swap request for this item.</div>}
+        {swapStatus && <div className="mt-2 text-sm text-blue-600">{swapStatus}</div>}
 
         <div className="mt-6">
           <Link href="/pages/Browse" className="text-blue-500 hover:underline">

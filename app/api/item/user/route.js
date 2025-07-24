@@ -3,6 +3,7 @@ import connectDB from '@/utils/db';
 import tbl_item from '@/models/Item';
 import rewear_User from '@/models/User';
 import { cookies } from 'next/headers';
+import { SwapRequest } from '@/models/Item';
 
 export async function GET() {
   await connectDB();
@@ -29,5 +30,14 @@ export async function GET() {
   // ✅ Fetch all user items, including their status
   const items = await tbl_item.find({ uploadedBy: user._id }).lean();
 
-  return NextResponse.json({ items });
+  // Fetch swaps where user is owner (received requests)
+  const swapsAsOwner = await SwapRequest.find({ owner: user._id })
+    .populate('item requester', 'title name email')
+    .lean();
+  // Fetch swaps where user is requester (sent requests)
+  const swapsAsRequester = await SwapRequest.find({ requester: user._id })
+    .populate('item owner', 'title name email')
+    .lean();
+
+  return NextResponse.json({ items, swapsAsOwner, swapsAsRequester });
 }

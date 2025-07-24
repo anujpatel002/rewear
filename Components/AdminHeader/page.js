@@ -21,9 +21,9 @@ export default function Header() {
       <Link href="/pages/Admin" className="text-xl font-bold text-emerald-600">ReWear</Link>
       <nav className="flex items-center space-x-4">
         <Link href="/pages/Admin" className="hover:text-emerald-600">Home</Link>
-        <Link href="/pages/Admin" className="hover:text-emerald-600">History</Link>
+        <Link href="/pages/History" className="hover:text-emerald-600">History</Link>
         <Link href="/pages/AdminUserPannel" className="hover:text-emerald-600">Users</Link>
-        <Link href="/pages/Admin" className="hover:text-emerald-600">Items</Link>
+        <Link href="/pages/Items" className="hover:text-emerald-600">Items</Link>
         
 
         {user ? (
