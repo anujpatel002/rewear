@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchSession } from '@/utils/session';
 import { toast, ToastContainer } from 'react-toastify';
+import { useSocket } from '@/context/SocketContext';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function AdminPanel() {
@@ -11,6 +12,7 @@ export default function AdminPanel() {
   const [pendingItems, setPendingItems] = useState([]);
   const [loading, setLoading] = useState(true); // 🔧 Use loading state
   const router = useRouter();
+  const { socket } = useSocket() || {};
 
   useEffect(() => {
     const shouldReload = sessionStorage.getItem('adminRedirect') === 'true';
@@ -39,6 +41,22 @@ export default function AdminPanel() {
 
     loadAdmin();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onStatus = () => fetchPendingItems();
+    const onCreated = () => fetchPendingItems();
+    socket.on('item:status', onStatus);
+    socket.on('item:updated', onStatus);
+    socket.on('item:created', onCreated);
+    socket.on('item:deleted', onStatus);
+    return () => {
+      socket.off('item:status', onStatus);
+      socket.off('item:updated', onStatus);
+      socket.off('item:created', onCreated);
+      socket.off('item:deleted', onStatus);
+    };
+  }, [socket]);
 
   const fetchPendingItems = async () => {
     try {
@@ -80,7 +98,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="p-8 min-h-screen bg-gray-100">
+    <div className="p-8 min-h-screen bg-background">
       <ToastContainer />
       <h1 className="text-2xl font-bold mb-6">Admin Panel - Pending Approvals</h1>
 
@@ -89,7 +107,7 @@ export default function AdminPanel() {
       ) : (
         <div className="grid gap-4">
           {pendingItems.map(item => (
-            <div key={item._id} className="border p-4 rounded bg-white shadow flex gap-5 items-start">
+            <div key={item._id} className="card p-4 flex gap-5 items-start">
               {item.imageUrl && (
                 <img
                   src={item.imageUrl}
@@ -99,20 +117,17 @@ export default function AdminPanel() {
               )}
               <div className="flex-grow">
                 <h2 className="font-semibold text-lg">{item.title}</h2>
-                <p className="text-sm text-gray-700">{item.description}</p>
+                <p className="text-sm muted">{item.description}</p>
                 <p className="text-sm"><strong>Category:</strong> {item.category}</p>
                 <p className="text-sm"><strong>Uploaded By:</strong> {item.uploadedBy?.email}</p>
 
                 <div className="mt-3 flex gap-3">
-                  <button
-                    onClick={() => handleApproval(item._id, true)}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded"
-                  >
+                  <button onClick={() => handleApproval(item._id, true)} className="btn btn-primary px-4 py-1">
                     Approve
                   </button>
                   <button
                     onClick={() => handleApproval(item._id, false)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded"
+                    className="btn btn-ghost text-red-600 hover:text-red-700"
                   >
                     Reject
                   </button>

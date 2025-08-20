@@ -21,7 +21,17 @@ export async function GET() {
       return NextResponse.json({ valid: false }, { status: 200 });
     }
 
-    return NextResponse.json({ valid: true, user: dbUser }, { status: 200 });
+    // Only return safe fields to the client
+    const safeUser = {
+      _id: dbUser._id,
+      name: dbUser.name,
+      email: dbUser.email,
+      role: dbUser.role,
+      isActive: dbUser.isActive,
+      profilePic: dbUser.profilePic,
+      address: dbUser.address,
+    };
+    return NextResponse.json({ valid: true, user: safeUser }, { status: 200 });
   } catch (err) {
     console.error('Verify error:', err);
     return NextResponse.json({ valid: false, error: 'Internal server error' }, { status: 500 });

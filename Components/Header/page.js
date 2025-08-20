@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 export default function Header() {
@@ -44,69 +45,103 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-md">
+    <header className="bg-surface border-b border-border">
       <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold text-emerald-600">ReWear</Link>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+          <Link href="/" className="text-2xl font-bold text-primary">ReWear</Link>
+        </motion.div>
 
         {/* Desktop Menu */}
         <nav className="hidden md:flex items-center space-x-6">
-          <Link href="/" className="hover:text-emerald-600">Home</Link>
-          <Link href="/pages/Browse" className="hover:text-emerald-600">Browse</Link>
-          <Link href="/pages/NewItem" className="hover:text-emerald-600">List an Item</Link>
+          {[
+            { href: '/', label: 'Home' },
+            { href: '/pages/Browse', label: 'Browse' },
+            { href: '/pages/NewItem', label: 'List an Item' },
+          ].map((item) => (
+            <motion.div key={item.href} whileHover={{ y: -2 }} whileTap={{ y: 0 }}>
+              <Link href={item.href} className="hover:text-primary">{item.label}</Link>
+            </motion.div>
+          ))}
           {user && (
-            <Link href="/pages/Dashboard" className="hover:text-emerald-600">Dashboard</Link>
+            <motion.div whileHover={{ y: -2 }} whileTap={{ y: 0 }}>
+              <Link href="/pages/Dashboard" className="hover:text-primary">Dashboard</Link>
+            </motion.div>
           )}
           {user ? (
             <div className="relative">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center text-lg font-bold"
+                className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center text-lg font-bold bg-primary text-primary-foreground"
               >
-                {user.name?.charAt(0).toUpperCase()}
-              </button>
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-2 bg-white border rounded shadow-lg w-32 z-10">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                {user.profilePic ? (
+                  <img src={user.profilePic} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  user.name?.charAt(0).toUpperCase()
+                )}
+              </motion.button>
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 bg-white border rounded shadow-lg w-32 z-10"
                   >
-                    Logout
-                  </button>
-                </div>
-              )}
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
-            <Link href="/auth/login" className="hover:text-emerald-600">Login / Signup</Link>
+            <motion.div whileHover={{ y: -2 }} whileTap={{ y: 0 }}>
+              <Link href="/auth/login" className="hover:text-primary">Login / Signup</Link>
+            </motion.div>
           )}
         </nav>
 
         {/* Mobile Hamburger */}
-        <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
+        <motion.button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)} whileTap={{ scale: 0.9 }}>
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        </motion.button>
       </div>
 
       {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="md:hidden px-4 pb-4 space-y-2 bg-white border-t">
-          <Link href="/" className="block hover:text-emerald-600">Home</Link>
-          <Link href="/pages/Browse" className="block hover:text-emerald-600">Browse</Link>
-          <Link href="/pages/NewItem" className="block hover:text-emerald-600">List an Item</Link>
-          {user && (
-            <Link href="/pages/Dashboard" className="block hover:text-emerald-600">Dashboard</Link>
-          )}
-          {user ? (
-            <button
-              onClick={handleLogout}
-              className="block text-left w-full hover:text-red-500"
-            >
-              Logout
-            </button>
-          ) : (
-            <Link href="/auth/login" className="block hover:text-emerald-600">Login / Signup</Link>
-          )}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {menuOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden px-4 pb-4 space-y-2 bg-surface border-t border-border overflow-hidden"
+          >
+            <Link href="/" className="block hover:text-primary">Home</Link>
+            <Link href="/pages/Browse" className="block hover:text-primary">Browse</Link>
+            <Link href="/pages/NewItem" className="block hover:text-primary">List an Item</Link>
+            {user && (
+              <Link href="/pages/Dashboard" className="block hover:text-primary">Dashboard</Link>
+            )}
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="block text-left w-full hover:text-red-500"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link href="/auth/login" className="block hover:text-primary">Login / Signup</Link>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

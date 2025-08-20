@@ -13,6 +13,7 @@ export default function ListItemForm() {
     size: '',
     condition: '',
     tags: '',
+    points: '',
     image: null,
   });
 
@@ -68,7 +69,7 @@ export default function ListItemForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-6 bg-white rounded shadow-md space-y-4 mt-10">
+    <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-6 card space-y-4 mt-10">
       <h2 className="text-2xl font-bold mb-4 text-center">List a New Item</h2>
 
       <input
@@ -78,7 +79,7 @@ export default function ListItemForm() {
         value={formFields.title}
         onChange={handleChange}
         required
-        className="w-full p-3 border rounded"
+        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
       />
 
       <textarea
@@ -87,7 +88,7 @@ export default function ListItemForm() {
         value={formFields.description}
         onChange={handleChange}
         required
-        className="w-full p-3 border rounded"
+        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
       />
 
       {/* Category Dropdown */}
@@ -96,7 +97,7 @@ export default function ListItemForm() {
         value={formFields.category}
         onChange={handleChange}
         required
-        className="w-full p-3 border rounded bg-white"
+        className="w-full p-3 border border-border rounded bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
       >
         <option value="" disabled>Select Category</option>
         <option value="Tops">Tops</option>
@@ -117,7 +118,7 @@ export default function ListItemForm() {
         value={formFields.type}
         onChange={handleChange}
         required
-        className="w-full p-3 border rounded"
+        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
       />
 
       <input
@@ -127,7 +128,7 @@ export default function ListItemForm() {
         value={formFields.size}
         onChange={handleChange}
         required
-        className="w-full p-3 border rounded"
+        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
       />
 
       <input
@@ -137,7 +138,7 @@ export default function ListItemForm() {
         value={formFields.condition}
         onChange={handleChange}
         required
-        className="w-full p-3 border rounded"
+        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
       />
 
       <input
@@ -146,7 +147,18 @@ export default function ListItemForm() {
         placeholder="Tags (comma separated)"
         value={formFields.tags}
         onChange={handleChange}
-        className="w-full p-3 border rounded"
+        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+      />
+
+      <input
+        type="number"
+        name="points"
+        placeholder="Points (required to swap/buy)"
+        value={formFields.points}
+        onChange={handleChange}
+        min="0"
+        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        required
       />
 
       <input
@@ -161,9 +173,7 @@ export default function ListItemForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className={`w-full py-3 px-4 rounded text-white font-semibold transition ${
-          isSubmitting ? 'bg-gray-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'
-        }`}
+        className={`btn btn-primary w-full ${isSubmitting ? 'opacity-60 cursor-not-allowed' : ''}`}
       >
         {isSubmitting ? 'Submitting...' : 'Submit Item'}
       </button>

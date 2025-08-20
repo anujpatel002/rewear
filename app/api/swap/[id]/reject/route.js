@@ -24,5 +24,10 @@ export async function POST(req, { params }) {
   }
   swap.status = 'rejected';
   await swap.save();
+  try {
+    if (process.emit) {
+      process.emit('emit-event', { event: 'swap:status', payload: { id, status: 'rejected' } });
+    }
+  } catch {}
   return NextResponse.json({ message: 'Swap rejected', swap });
 }

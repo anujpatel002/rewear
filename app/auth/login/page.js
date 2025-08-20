@@ -13,7 +13,7 @@ import { Eye, EyeOff } from 'lucide-react';
 // Spinner component
 function Spinner() {
   return (
-    <span className="inline-block align-middle animate-spin rounded-full border-2 border-t-emerald-500 border-gray-300 h-5 w-5 mr-2" role="status" aria-label="Loading"></span>
+    <span className="inline-block align-middle animate-spin rounded-full border-2 border-t-primary border-border h-5 w-5 mr-2" role="status" aria-label="Loading"></span>
   );
 }
 
@@ -102,9 +102,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <ToastContainer position="top-right" autoClose={3000} />
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-md">
+      <div className="max-w-md w-full p-8 card transition hover:shadow-md">
         <h1 className="text-3xl font-bold mb-6 text-center">Log In to ReWear</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -114,7 +114,7 @@ export default function LoginPage() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full mt-1 px-4 py-2 border rounded"
+              className="w-full mt-1 px-4 py-2 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
           </div>
@@ -126,7 +126,7 @@ export default function LoginPage() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full mt-1 px-4 py-2 border rounded pr-10 transition-all duration-200"
+                className="w-full mt-1 px-4 py-2 border border-border rounded pr-10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary"
                 required
               />
               <button
@@ -134,7 +134,7 @@ export default function LoginPage() {
                 tabIndex={0}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-pressed={showPassword}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 bg-transparent transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-full ${showPassword ? 'scale-110' : 'scale-100'} opacity-80 hover:opacity-100`}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 bg-transparent transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-primary rounded-full ${showPassword ? 'scale-110' : 'scale-100'} opacity-80 hover:opacity-100`}
                 onClick={() => setShowPassword(v => !v)}
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setShowPassword(v => !v); }}
               >
@@ -145,10 +145,10 @@ export default function LoginPage() {
           </div>
 
           <div className="flex justify-between text-sm mt-1">
-            <Link href="/auth/forgot-password" className="text-emerald-600 hover:underline">
+            <Link href="/auth/forgot-password" className="text-primary hover:underline">
               Forgot password?
             </Link>
-            <Link href="/auth/signup" className="text-emerald-600 hover:underline">
+            <Link href="/auth/signup" className="text-primary hover:underline">
               Not registered? Sign up
             </Link>
           </div>
@@ -156,9 +156,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full mt-4 text-white py-2 rounded ${
-              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600'
-            }`}
+            className={`btn btn-primary w-full mt-4`}
           >
             {loading ? <><Spinner /> Logging in...</> : 'Log In'}
           </button>

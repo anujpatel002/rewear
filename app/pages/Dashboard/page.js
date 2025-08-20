@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSocket } from '@/context/SocketContext';
 import { fetchSession } from '@/utils/session';
 import { Country, State, City } from 'country-state-city';
 import { useSession } from '@/context/SessionContext';
@@ -17,6 +18,7 @@ export default function DashboardPage() {
     const fileInputRef = useRef();
     const [profilePreview, setProfilePreview] = useState('');
     const { refreshSession } = useSession();
+    const { socket } = useSocket() || {};
 
     // Move fetchUserItems outside so it's accessible everywhere
     const fetchUserItems = async () => {
@@ -65,6 +67,23 @@ export default function DashboardPage() {
         loadUser();
     }, [router]);
 
+    useEffect(() => {
+        if (!socket) return;
+        const refetch = () => fetchUserItems();
+        socket.on('swap:status', refetch);
+        socket.on('swap:created', refetch);
+        socket.on('swap:updated', refetch);
+        socket.on('item:status', refetch);
+        socket.on('item:deleted', refetch);
+        return () => {
+            socket.off('swap:status', refetch);
+            socket.off('swap:created', refetch);
+            socket.off('swap:updated', refetch);
+            socket.off('item:status', refetch);
+            socket.off('item:deleted', refetch);
+        };
+    }, [socket]);
+
     if (!user) return <div className="text-center mt-20">Loading...</div>;
 
     async function saveProfile(profilePic) {
@@ -78,24 +97,24 @@ export default function DashboardPage() {
                 setShowEditProfile(false);
                 const updated = await res.json();
                 setUser(u => ({ ...u, ...updated.user }));
-                await refreshSession(); // Update nav/profile context
+                await refreshSession(); // Update nav/profile context so headers reflect image
             }
         } catch {}
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-8">
+        <div className="min-h-screen bg-background p-8">
             <h1 className="text-3xl font-bold text-emerald-600 mb-6">
                 {user.name}&apos;s Dashboard
             </h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Profile Card */}
-                <div className="bg-white shadow rounded-lg p-6">
+                <div className="card p-6 transition hover:shadow-md">
                     <h2 className="text-xl font-semibold mb-4 flex items-center justify-between">
                         Profile Details
                         <button
-                            className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded ml-2"
+                            className="btn btn-ghost text-xs px-2 py-1 ml-2"
                             onClick={() => setShowEditProfile(v => !v)}
                         >
                             {showEditProfile ? 'Cancel' : 'Edit Profile'}
@@ -109,18 +128,18 @@ export default function DashboardPage() {
                                 className="w-20 h-20 object-cover rounded-full border"
                             />
                         ) : (
-                            <div className="w-20 h-20 rounded-full border bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-600">
+                            <div className="w-20 h-20 rounded-full border border-border bg-slate-200 flex items-center justify-center text-3xl font-bold text-slate-600">
                                 {user.name?.charAt(0).toUpperCase()}
                             </div>
                         )}
                         <div>
                             <p className="font-semibold">{user.name}</p>
-                            <p className="text-xs text-gray-500">{user.email}</p>
+                            <p className="text-xs muted">{user.email}</p>
                         </div>
                     </div>
                     <p><strong>Address:</strong> {user.address?.country || user.address?.state || user.address?.city || user.address?.pinCode ? (
                         <span>{[user.address?.country, user.address?.state, user.address?.city, user.address?.pinCode].filter(Boolean).join(', ')}</span>
-                    ) : <span className="text-gray-400">Not set</span>}</p>
+                    ) : <span className="muted">Not set</span>}</p>
                     <p><strong>Points Balance:</strong> {user.points || 0}</p>
                     {showEditProfile && (
                         <form
@@ -167,7 +186,7 @@ export default function DashboardPage() {
                                     />
                                 )}
                                 {!profilePreview && user.name && (
-                                    <div className="w-20 h-20 rounded-full border bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-600 mt-2">
+                                    <div className="w-20 h-20 rounded-full border border-border bg-slate-200 flex items-center justify-center text-3xl font-bold text-slate-600 mt-2">
                                         {user.name.charAt(0).toUpperCase()}
                                     </div>
                                 )}
@@ -189,7 +208,7 @@ export default function DashboardPage() {
                                                 }
                                             }));
                                         }}
-                                        className="w-full border px-3 py-2 rounded"
+                                        className="w-full border border-border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                                     >
                                         <option value="">Select Country</option>
                                         {Country.getAllCountries().map(country => (
@@ -212,7 +231,7 @@ export default function DashboardPage() {
                                                 }
                                             }));
                                         }}
-                                        className="w-full border px-3 py-2 rounded"
+                                        className="w-full border border-border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                                         disabled={!profileForm.address.country}
                                     >
                                         <option value="">Select State</option>
@@ -231,7 +250,7 @@ export default function DashboardPage() {
                                             ...f,
                                             address: { ...f.address, city: e.target.value }
                                         }))}
-                                        className="w-full border px-3 py-2 rounded"
+                                        className="w-full border border-border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                                         disabled={!profileForm.address.state}
                                     >
                                         <option value="">Select City</option>
@@ -251,7 +270,7 @@ export default function DashboardPage() {
                                             ...f,
                                             address: { ...f.address, pinCode: e.target.value }
                                         }))}
-                                        className="w-full border px-3 py-2 rounded"
+                                        className="w-full border border-border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                                     />
                                 </div>
                                 {/* Address */}
@@ -264,13 +283,13 @@ export default function DashboardPage() {
                                             ...f,
                                             address: { ...f.address, address: e.target.value }
                                         }))}
-                                        className="w-full border px-3 py-2 rounded"
+                                        className="w-full border border-border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                                     />
                                 </div>
                             </div>
                             <button
                                 type="submit"
-                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                                className="btn btn-primary"
                             >
                                 Save
                             </button>
@@ -279,14 +298,14 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Uploaded Items */}
-                <div className="bg-white shadow rounded-lg p-6">
+                <div className="card p-6 transition hover:shadow-md">
                     <h2 className="text-xl font-semibold mb-4">Uploaded Items</h2>
                     {items.length === 0 ? (
                         <p>No items uploaded yet.</p>
                     ) : (
                         <ul className="space-y-3">
                             {items.map(item => (
-                                <li key={item._id} className="border rounded p-3 shadow-sm flex gap-4 items-start">
+                                <li key={item._id} className="card p-3 flex gap-4 items-start">
 
                                     {/* Image */}
                                     {item.imageUrl && (
@@ -300,10 +319,11 @@ export default function DashboardPage() {
                                     {/* Item details */}
                                     <div>
                                         <h3 className="font-semibold text-lg">{item.title}</h3>
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-sm muted">
                                             {item.category} | {item.size} | {item.condition}
                                         </p>
                                         <p className="text-sm">{item.description}</p>
+                                        <p className="text-xs muted">Points: {item.points || 0}</p>
                                         <span
                                             className={`inline-block mt-2 px-2 py-1 text-xs font-semibold rounded ${item.status === 'pending'
                                                     ? 'bg-yellow-200 text-yellow-800'
@@ -327,16 +347,16 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Swap Status */}
-                <div className="bg-white shadow rounded-lg p-6 col-span-full">
+                <div className="card p-6 col-span-full">
                     <h2 className="text-xl font-semibold mb-4">Swaps</h2>
                     <div className="mb-6">
                         <h3 className="font-semibold mb-2">Swaps Requested By You</h3>
                         {swapsAsRequester.length === 0 ? (
-                            <p className="text-sm text-gray-500">No swap requests sent.</p>
+                            <p className="text-sm muted">No swap requests sent.</p>
                         ) : (
                             <ul className="space-y-2">
                                 {swapsAsRequester.map(swap => (
-                                    <li key={swap._id} className="border rounded p-3 flex flex-col md:flex-row md:items-center gap-3">
+                                    <li key={swap._id} className="card p-3 flex flex-col md:flex-row md:items-center gap-3 transition hover:shadow-sm">
                                         {/* Item Image */}
                                         {swap.item?.imageUrl && (
                                             <img
@@ -365,11 +385,11 @@ export default function DashboardPage() {
                     <div>
                         <h3 className="font-semibold mb-2">Swap Requests For Your Items</h3>
                         {swapsAsOwner.length === 0 ? (
-                            <p className="text-sm text-gray-500">No swap requests received.</p>
+                            <p className="text-sm muted">No swap requests received.</p>
                         ) : (
                             <ul className="space-y-2">
                                 {swapsAsOwner.map(swap => (
-                                    <li key={swap._id} className="border rounded p-3 flex flex-col md:flex-row md:items-center gap-3">
+                                    <li key={swap._id} className="card p-3 flex flex-col md:flex-row md:items-center gap-3 transition hover:shadow-sm">
                                         {/* Item Image */}
                                         {swap.item?.imageUrl && (
                                             <img
@@ -393,7 +413,7 @@ export default function DashboardPage() {
                                         {swap.status === 'pending' && (
                                             <div className="flex gap-2">
                                                 <button
-                                                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+                                                    className="btn btn-primary px-3 py-1"
                                                     onClick={async () => {
                                                         await fetch(`/api/swap/${swap._id}/approve`, { method: 'POST' });
                                                         fetchUserItems();
@@ -402,7 +422,7 @@ export default function DashboardPage() {
                                                     Approve
                                                 </button>
                                                 <button
-                                                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                                                    className="btn btn-ghost text-red-600 hover:text-red-700 px-3 py-1"
                                                     onClick={async () => {
                                                         await fetch(`/api/swap/${swap._id}/reject`, { method: 'POST' });
                                                         fetchUserItems();

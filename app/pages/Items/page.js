@@ -108,7 +108,7 @@ export default function AdminItemsPage() {
   if (loading) return <div className="p-8 text-center">Loading items...</div>;
 
   return (
-    <div className="p-8 min-h-screen bg-gray-100">
+    <div className="p-8 min-h-screen bg-background">
       <h1 className="text-2xl font-bold mb-6">Admin - All Approved Products</h1>
       <div className="mb-6 flex flex-col md:flex-row gap-4 items-center">
         <input
@@ -116,27 +116,24 @@ export default function AdminItemsPage() {
           placeholder="Search by item, email, or user name..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="border px-3 py-2 rounded w-full md:w-72"
+          className="border border-border px-3 py-2 rounded w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <select
           value={filterCategory}
           onChange={e => setFilterCategory(e.target.value)}
-          className="border px-3 py-2 rounded w-full md:w-60"
+          className="border border-border px-3 py-2 rounded w-full md:w-60 focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="">All Categories</option>
           {allCategories.map(cat => (
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
-        <button
-          className="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700"
-          onClick={() => setShowAdd(true)}
-        >
+        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
           Add Product
         </button>
       </div>
       {showAdd && (
-        <form className="bg-white p-6 rounded shadow mb-8" onSubmit={handleAdd}>
+        <form className="card p-6 mb-8" onSubmit={handleAdd}>
           <h2 className="text-lg font-semibold mb-4">Add Product</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
@@ -144,7 +141,7 @@ export default function AdminItemsPage() {
               placeholder="Title"
               value={addForm.title}
               onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))}
-              className="border px-3 py-2 rounded"
+              className="border border-border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
             <input
@@ -152,7 +149,7 @@ export default function AdminItemsPage() {
               placeholder="Category"
               value={addForm.category}
               onChange={e => setAddForm(f => ({ ...f, category: e.target.value }))}
-              className="border px-3 py-2 rounded"
+              className="border border-border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
             <input
@@ -160,14 +157,14 @@ export default function AdminItemsPage() {
               placeholder="Image URL"
               value={addForm.imageUrl}
               onChange={e => setAddForm(f => ({ ...f, imageUrl: e.target.value }))}
-              className="border px-3 py-2 rounded"
+              className="border border-border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <input
               type="text"
               placeholder="User Email (owner)"
               value={addForm.email}
               onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))}
-              className="border px-3 py-2 rounded"
+              className="border border-border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
           </div>
@@ -175,21 +172,21 @@ export default function AdminItemsPage() {
             placeholder="Description"
             value={addForm.description}
             onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))}
-            className="border px-3 py-2 rounded w-full mt-4"
+            className="border border-border px-3 py-2 rounded w-full mt-4 focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
           <div className="mt-4 flex gap-2">
-            <button type="submit" className="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">Add</button>
-            <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => setShowAdd(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary">Add</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
           </div>
         </form>
       )}
       <ul className="space-y-4">
         {filteredItems.length === 0 ? (
-          <li className="text-gray-500">No products found.</li>
+          <li className="muted">No products found.</li>
         ) : (
           filteredItems.map(item => (
-            <li key={item._id} className="bg-white p-4 rounded shadow flex gap-4 items-center">
+            <li key={item._id} className="card p-4 flex gap-4 items-center transition hover:shadow-md">
               {item.imageUrl && (
                 <img src={item.imageUrl} alt={item.title} className="w-20 h-20 object-cover rounded" />
               )}
@@ -200,54 +197,47 @@ export default function AdminItemsPage() {
                       type="text"
                       value={editForm.title}
                       onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
-                      className="border px-3 py-2 rounded w-full"
+                      className="border border-border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-primary"
                       required
                     />
                     <input
                       type="text"
                       value={editForm.category}
                       onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
-                      className="border px-3 py-2 rounded w-full"
+                      className="border border-border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-primary"
                       required
                     />
                     <input
                       type="text"
                       value={editForm.imageUrl}
                       onChange={e => setEditForm(f => ({ ...f, imageUrl: e.target.value }))}
-                      className="border px-3 py-2 rounded w-full"
+                      className="border border-border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <textarea
                       value={editForm.description}
                       onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
-                      className="border px-3 py-2 rounded w-full"
+                      className="border border-border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-primary"
                       required
                     />
                     <div className="flex gap-2">
-                      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save</button>
-                      <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => setEditId(null)}>Cancel</button>
+                      <button type="submit" className="btn btn-primary">Save</button>
+                      <button type="button" className="btn btn-ghost" onClick={() => setEditId(null)}>Cancel</button>
                     </div>
                   </form>
                 ) : (
                   <>
                     <h3 className="font-semibold text-lg">{item.title}</h3>
-                    <p className="text-sm text-gray-600">{item.description}</p>
-                    <p className="text-xs text-gray-500">Category: {item.category}</p>
-                    <p className="text-xs text-gray-500">Uploaded By: {item.uploadedBy?.email || 'N/A'} {item.uploadedBy?.name ? `(${item.uploadedBy.name})` : ''}</p>
+                    <p className="text-sm muted">{item.description}</p>
+                    <p className="text-xs muted">Category: {item.category} • Points: {item.points || 0}</p>
+                    <p className="text-xs muted">Uploaded By: {item.uploadedBy?.email || 'N/A'} {item.uploadedBy?.name ? `(${item.uploadedBy.name})` : ''}</p>
                   </>
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <button
-                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                  onClick={() => handleEdit(item)}
-                  disabled={editId === item._id}
-                >
+                <button className="btn btn-primary px-3 py-1" onClick={() => handleEdit(item)} disabled={editId === item._id}>
                   Modify
                 </button>
-                <button
-                  className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                  onClick={() => handleDelete(item._id)}
-                >
+                <button className="btn btn-ghost text-red-600 hover:text-red-700" onClick={() => handleDelete(item._id)}>
                   Delete
                 </button>
               </div>

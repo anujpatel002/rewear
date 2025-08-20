@@ -32,6 +32,7 @@ export async function POST(req) {
     size,
     condition,
     tags,
+    points,
   } = Object.fromEntries(formData);
 
   const file = formData.get('image');
@@ -73,6 +74,7 @@ export async function POST(req) {
     return NextResponse.json({ message: 'Duplicate item already pending for approval' }, { status: 409 });
   }
 
+  const pricePoints = Math.max(0, Number(points || 0) || 0);
   const newItem = await tbl_item.create({
     title,
     description,
@@ -82,6 +84,7 @@ export async function POST(req) {
     condition,
     tags,
     imageUrl,
+    points: pricePoints,
     uploadedBy: user._id,
     status: 'pending',
     createdAt: new Date(),

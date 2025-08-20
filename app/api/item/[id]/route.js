@@ -60,6 +60,11 @@ export async function POST(req, { params }) {
     owner: item.uploadedBy._id,
     status: 'pending',
   });
+  try {
+    if (process.emit) {
+      process.emit('emit-event', { event: 'swap:created', payload: { id: String(swap._id) } });
+    }
+  } catch {}
   return NextResponse.json({ message: 'Swap request sent', swap });
 }
 
@@ -86,6 +91,11 @@ export async function PUT(req, { params }) {
   if (!updated) {
     return NextResponse.json({ error: 'Item not found' }, { status: 404 });
   }
+  try {
+    if (process.emit) {
+      process.emit('emit-event', { event: 'item:updated', payload: { id } });
+    }
+  } catch {}
   return NextResponse.json({ message: 'Item updated', item: updated });
 }
 
@@ -107,5 +117,17 @@ export async function DELETE(req, { params }) {
   if (!deleted) {
     return NextResponse.json({ error: 'Item not found' }, { status: 404 });
   }
-  return NextResponse.json({ message: 'Item deleted' });
+  try {
+    if (process.emit) {
+      process.emit('emit-event', { event: 'item:deleted', payload: { id } });
+    }
+  } catch {}
+  // Cascade delete all swap requests associated with this item
+  try {
+    await SwapRequest.deleteMany({ item: id });
+  } catch (e) {
+    // Log and continue; item is already deleted
+    console.error('Failed to delete related swaps for item', id, e);
+  }
+  return NextResponse.json({ message: 'Item and related swaps deleted' });
 }

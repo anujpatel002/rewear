@@ -40,6 +40,11 @@ const userSchema = new mongoose.Schema({
     city: { type: String, default: '' },
     pinCode: { type: String, default: '' },
   },
+  points: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -25,6 +25,11 @@ export async function POST(req) {
     status: 'approved',
     createdAt: new Date(),
   });
-
+  try {
+    if (process.emit) {
+      process.emit('emit-event', { event: 'item:created', payload: { id: String(newItem._id) } });
+      process.emit('emit-event', { event: 'item:status', payload: { id: String(newItem._id), status: 'approved' } });
+    }
+  } catch {}
   return NextResponse.json({ message: 'Product added successfully', item: newItem });
 } 

@@ -9,6 +9,7 @@ const itemSchema = new mongoose.Schema({
   condition: String,
   tags: String,
   imageUrl: String,
+  points: { type: Number, default: 0, min: 0 },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],

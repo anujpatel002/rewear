@@ -4,6 +4,9 @@ import { SessionProvider, useSession } from '@/context/SessionContext';
 import Header from '../Components/Header/page';
 import AdminHeader from '../Components/AdminHeader/page';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { AnimatePresence, motion } from 'framer-motion';
+import { SocketProvider } from '@/context/SocketContext';
+import { usePathname } from 'next/navigation';
 
 
 const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' });
@@ -18,12 +21,26 @@ function DynamicHeader() {
 }
 
 export default function RootLayout({ children }) {
+  const pathname = usePathname();
+
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} bg-gray-100 min-h-screen`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground min-h-screen`}>
         <SessionProvider>
-          <DynamicHeader />
-          <main>{children}</main>
+          <SocketProvider>
+            <DynamicHeader />
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.main
+                key={pathname}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+              >
+                {children}
+              </motion.main>
+            </AnimatePresence>
+          </SocketProvider>
         </SessionProvider>
       </body>
     </html>

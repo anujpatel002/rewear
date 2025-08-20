@@ -23,6 +23,10 @@ export async function POST(req) {
   }
 
   await tbl_item.findByIdAndUpdate(id, { status: 'rejected' });
-
+  try {
+    if (process.emit) {
+      process.emit('emit-event', { event: 'item:status', payload: { id, status: 'rejected' } });
+    }
+  } catch {}
   return NextResponse.json({ message: 'Item rejected' });
 }

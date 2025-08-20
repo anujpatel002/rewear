@@ -1,16 +1,14 @@
 export async function fetchSession() {
   try {
-    const res = await fetch('/api/auth/session', {
+    // Prefer server-verified, up-to-date user details
+    const res = await fetch('/api/user/verify', {
       method: 'GET',
       credentials: 'include',
     });
 
-    const contentType = res.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      const data = await res.json();
-      return data.user || null;
-    }
-
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data?.valid && data?.user) return data.user;
     return null;
   } catch (err) {
     console.error('Error fetching session:', err);

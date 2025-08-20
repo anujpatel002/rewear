@@ -23,6 +23,10 @@ export async function POST(req) {
   }
 
   await tbl_item.findByIdAndUpdate(id, { status: 'approved' });
-
+  try {
+    if (process.emit) {
+      process.emit('emit-event', { event: 'item:status', payload: { id, status: 'approved' } });
+    }
+  } catch {}
   return NextResponse.json({ message: 'Item approved' });
 }

@@ -1,26 +1,59 @@
 @import "tailwindcss";
 
-/* :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Colors */
+  --color-background: #f8fafc; /* slate-50 */
+  --color-foreground: #0f172a; /* slate-900 */
+  --color-surface: #ffffff; /* white */
+  --color-muted-foreground: #64748b; /* slate-500 */
+  --color-border: #e2e8f0; /* slate-200 */
+  --color-primary: #059669; /* emerald-600 */
+  --color-primary-foreground: #ffffff;
+  --color-accent: #0ea5e9; /* sky-500 */
+  --color-popover: #ffffff;
+
+  /* Typography */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  @theme inline {
+    --color-background: #0b1220; /* slate-950-ish */
+    --color-foreground: #e2e8f0; /* slate-200 */
+    --color-surface: #0f172a; /* slate-900 */
+    --color-muted-foreground: #94a3b8; /* slate-400 */
+    --color-border: #1f2937; /* slate-800 */
+    --color-primary: #10b981; /* emerald-500 */
+    --color-primary-foreground: #052e2b;
+    --color-accent: #38bdf8; /* sky-400 */
+    --color-popover: #111827; /* gray-900 */
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-} */
+/* Component primitives */
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-50;
+}
+.btn-primary {
+  @apply bg-primary text-primary-foreground hover:opacity-90 active:opacity-80 shadow-sm;
+}
+.btn-neutral {
+  @apply bg-slate-800 text-white hover:bg-slate-900 active:bg-black dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-white;
+}
+.btn-ghost {
+  @apply text-foreground hover:bg-slate-100 active:bg-slate-200 dark:hover:bg-slate-800 dark:active:bg-slate-700;
+}
+
+.card {
+  @apply bg-surface border border-border rounded-lg shadow-sm;
+}
+
+.muted {
+  @apply text-muted-foreground;
+}

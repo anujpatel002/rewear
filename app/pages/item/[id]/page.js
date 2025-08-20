@@ -93,15 +93,15 @@ export default function ItemDetailPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow mt-10">
+    <div className="max-w-4xl mx-auto p-6 card mt-10 transition hover:shadow-md">
       <img
         src={item.imageUrl || '/images/placeholder.jpg'}
         alt={item.title}
         className="w-full h-96 object-cover rounded"
       />
       <div className="mt-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{item.title}</h1>
-        <p className="text-gray-600 mb-4">{item.description}</p>
+        <h1 className="text-3xl font-bold mb-2">{item.title}</h1>
+        <p className="muted mb-4">{item.description}</p>
         <p><strong>Category:</strong> {item.category}</p>
         <p><strong>Condition:</strong> {item.condition}</p>
         <p><strong>Size:</strong> {item.size}</p>
@@ -109,10 +109,10 @@ export default function ItemDetailPage() {
         {/* Tags */}
         {item.tags && (
           <div className="mt-4">
-            <h3 className="font-semibold text-gray-700">Tags:</h3>
+            <h3 className="font-semibold">Tags:</h3>
             <div className="flex flex-wrap gap-2 mt-1">
               {item.tags.split(',').map((tag, index) => (
-                <span key={index} className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-sm">
+                <span key={index} className="bg-slate-100 text-slate-800 px-2 py-1 rounded-full text-sm">
                   #{tag.trim()}
                 </span>
               ))}
@@ -122,8 +122,8 @@ export default function ItemDetailPage() {
 
         {/* Points */}
         <div className="mt-4">
-          <h3 className="font-semibold text-gray-700">Points Required:</h3>
-          <p className="text-green-600 font-bold">{item.points || 0} Points</p>
+          <h3 className="font-semibold">Points Required:</h3>
+          <p className="text-emerald-600 font-bold">{item.points || 0} Points</p>
         </div>
 
         {/* Action Buttons */}
@@ -131,14 +131,14 @@ export default function ItemDetailPage() {
           <button
             onClick={handleSwap}
             disabled={swapLoading || hasPendingSwap || isSwapped || (sessionUser && item.uploadedBy && sessionUser.email === item.uploadedBy.email)}
-            className={`bg-indigo-600 text-white px-5 py-2 rounded hover:bg-indigo-700 ${swapLoading || hasPendingSwap || isSwapped ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`btn btn-primary ${swapLoading || hasPendingSwap || isSwapped ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {isSwapped ? 'Not Available' : swapLoading ? 'Requesting...' : hasPendingSwap ? 'Already Requested' : 'Swap Item'}
+            {isSwapped ? 'Not Available' : swapLoading ? 'Requesting...' : hasPendingSwap ? 'Already Requested' : `Swap for ${item.points || 0} pts`}
           </button>
           <button
             onClick={() => alert('Purchase with points feature coming soon!')}
             disabled={isSwapped}
-            className={`bg-emerald-600 text-white px-5 py-2 rounded hover:bg-emerald-700 ${isSwapped ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`btn btn-neutral ${isSwapped ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Buy with Points
           </button>
@@ -148,7 +148,7 @@ export default function ItemDetailPage() {
         {swapStatus && <div className="mt-2 text-sm text-blue-600">{swapStatus}</div>}
 
         <div className="mt-6">
-          <Link href="/pages/Browse" className="text-blue-500 hover:underline">
+          <Link href="/pages/Browse" className="text-accent hover:underline">
             ← Back to Browse
           </Link>
         </div>
