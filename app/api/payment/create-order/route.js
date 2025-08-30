@@ -86,15 +86,15 @@ export async function POST(req) {
       const order = await razorpay.orders.create({
         amount: amountInPaise,
         currency: 'INR',
-        receipt: `points_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        receipt: `pts_${Date.now()}`, // <= 40 chars
         notes: {
-          points: points.toString(),
-          paymentMethod: paymentMethod,
-          originalPaymentMethod: paymentMethod,
-          upiId: upiId || '',
-          userId: sessionUser.email
+          pts: points.toString(),
+          method: paymentMethod,
+          upi: upiId || '',
+          user: sessionUser.email
         }
       });
+      
 
       console.log('Razorpay order created:', order.id);
 
