@@ -98,8 +98,12 @@ export default function PointsPurchase() {
         },
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      if (typeof window !== 'undefined' && window.Razorpay) {
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        throw new Error('Razorpay is not available. Please refresh the page and try again.');
+      }
 
     } catch (error) {
       console.error('Purchase error:', error);
