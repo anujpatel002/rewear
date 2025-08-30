@@ -74,6 +74,14 @@ export async function POST(req) {
     // Calculate amount in paise (₹1 = 100 paise)
     const amountInPaise = points * 100;
 
+    // Validate minimum amount for QR codes (₹100 or 10000 paise)
+    if (mappedPaymentMethod === 'upi' && amountInPaise < 10000) {
+      return NextResponse.json({ 
+        error: 'Invalid amount',
+        details: 'Minimum payment amount for UPI QR is ₹100'
+      }, { status: 400 });
+    }
+
     try {
       // Initialize Razorpay
       const razorpay = new Razorpay({
@@ -154,10 +162,17 @@ export async function POST(req) {
       });
 
     } catch (razorpayError) {
-      console.error('Razorpay error:', razorpayError);
+      console.error('Razorpay error details:', JSON.stringify(razorpayError, null, 2));
       return NextResponse.json({ 
         error: 'Payment gateway error',
-        details: razorpayError.message || 'Failed to create payment order or QR code'
+        details: razorpayError.message || 'Failed to create payment order or QR code',
+        razorpayError: {
+          code: razorpayError.code,
+          description: razorpayError.description,
+          source: razorpayError.source,
+          reason: razorpayError.reason,
+          field: razorpayError.field
+        }
       }, { status: 500 });
     }
 
