@@ -13,11 +13,31 @@ export function SocketProvider({ children }) {
     connecting.current = true;
 
     const url = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:${window.location.port || 3000}` : '';
-    const s = io(url, { path: '/socket-io', transports: ['websocket'] });
-    setSocket(s);
-    s.on('connect_error', () => {
-      // retry silently; socket.io has built-in backoff
+    const s = io(url, { 
+      path: '/socket-io', 
+      transports: ['websocket', 'polling'],
+      timeout: 5000,
+      forceNew: false,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+      reconnectionDelayMax: 5000,
     });
+    
+    setSocket(s);
+    
+    s.on('connect', () => {
+      console.log('Socket connected');
+    });
+    
+    s.on('connect_error', (error) => {
+      console.warn('Socket connection error:', error.message);
+      // Fallback to polling if websocket fails
+      if (s.io.opts.transports.includes('websocket')) {
+        s.io.opts.transports = ['polling'];
+      }
+    });
+    
     return () => {
       s.disconnect();
     };

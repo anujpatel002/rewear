@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"node socket/server.js\" \"next dev --turbopack -p 3001\"",
+    "dev": "node socket/server.js",
+    "dev:next": "next dev --turbopack -p 3000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3000",
     "lint": "next lint",
     "server": "node backend/page.js"
   },
