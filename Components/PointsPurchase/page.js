@@ -111,6 +111,8 @@ export default function PointsPurchase() {
     setIsLoading(true);
 
     try {
+      console.log('Creating payment order:', { points, paymentMethod: selectedPaymentApp });
+      
       // Create order
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
@@ -123,9 +125,10 @@ export default function PointsPurchase() {
       });
 
       const orderData = await orderRes.json();
+      console.log('Order response:', orderData);
 
       if (!orderRes.ok) {
-        throw new Error(orderData.error || 'Failed to create order');
+        throw new Error(orderData.error || orderData.details || 'Failed to create order');
       }
 
       // Handle different payment methods
@@ -139,7 +142,23 @@ export default function PointsPurchase() {
 
     } catch (error) {
       console.error('Purchase error:', error);
-      toast.error(error.message || 'Failed to initiate purchase');
+      
+      // Provide specific error messages based on error type
+      let errorMessage = 'Failed to initiate purchase';
+      
+      if (error.message.includes('Unauthorized')) {
+        errorMessage = 'Please login again to continue';
+      } else if (error.message.includes('Payment gateway configuration')) {
+        errorMessage = 'Payment system temporarily unavailable';
+      } else if (error.message.includes('Invalid points amount')) {
+        errorMessage = 'Please select a valid points package';
+      } else if (error.message.includes('Payment method')) {
+        errorMessage = 'Please select a valid payment method';
+      } else {
+        errorMessage = error.message || 'Something went wrong. Please try again.';
+      }
+      
+      toast.error(errorMessage);
       setIsLoading(false);
     }
   };
