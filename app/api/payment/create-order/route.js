@@ -34,6 +34,18 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Payment method is required' }, { status: 400 });
     }
 
+    // Map payment app IDs to supported payment methods
+    const paymentMethodMap = {
+      'gpay': 'upi',
+      'phonepe': 'upi', 
+      'paytm': 'upi',
+      'amazonpay': 'upi',
+      'bhim': 'upi',
+      'razorpay': 'razorpay'
+    };
+    
+    const mappedPaymentMethod = paymentMethodMap[paymentMethod] || paymentMethod;
+
     // Calculate amount in paise (₹1 = 100 paise)
     // 1 point = ₹1 (you can adjust this ratio)
     const amountInPaise = points * 100;
@@ -52,6 +64,7 @@ export async function POST(req) {
       notes: {
         points: points.toString(),
         paymentMethod: paymentMethod,
+        originalPaymentMethod: paymentMethod,
         upiId: upiId || '',
         userId: sessionUser.email
       }
@@ -64,7 +77,7 @@ export async function POST(req) {
       amount: amountInPaise / 100, // Convert back to rupees
       points: points,
       status: 'pending',
-      paymentMethod: paymentMethod,
+      paymentMethod: mappedPaymentMethod,
       razorpayOrderId: order.id,
       upiId: upiId || null,
       description: `Purchase of ${points} points via ${paymentMethod}`,
@@ -72,7 +85,8 @@ export async function POST(req) {
         orderId: order.id,
         currency: 'INR',
         receipt: order.receipt,
-        paymentMethod: paymentMethod
+        paymentMethod: paymentMethod,
+        originalPaymentMethod: paymentMethod
       }
     });
 
