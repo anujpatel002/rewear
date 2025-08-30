@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useSession } from '@/context/SessionContext';
+import { PAYMENT_APPS, generateUPILink } from '@/config/payment-apps';
 
 export default function PointsPurchase() {
   const [points, setPoints] = useState(100);
-  const [upiId, setUpiId] = useState('');
+  const [selectedPaymentApp, setSelectedPaymentApp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { refreshSession } = useSession();
 
@@ -16,14 +17,13 @@ export default function PointsPurchase() {
     setPoints(value);
   };
 
-  const handlePurchase = async () => {
-    if (!upiId.trim()) {
-      toast.error('Please enter your UPI ID');
-      return;
-    }
+  const handlePaymentAppSelect = (appId) => {
+    setSelectedPaymentApp(appId);
+  };
 
-    if (!upiId.includes('@')) {
-      toast.error('Please enter a valid UPI ID (e.g., username@upi)');
+  const handlePurchase = async () => {
+    if (!selectedPaymentApp) {
+      toast.error('Please select a payment method');
       return;
     }
 
@@ -34,7 +34,11 @@ export default function PointsPurchase() {
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ points, upiId: upiId.trim() }),
+        body: JSON.stringify({ 
+          points, 
+          paymentMethod: selectedPaymentApp,
+          upiId: null // No UPI ID needed for direct app redirect
+        }),
       });
 
       const orderData = await orderRes.json();
@@ -43,72 +47,105 @@ export default function PointsPurchase() {
         throw new Error(orderData.error || 'Failed to create order');
       }
 
-      // Initialize Razorpay payment
-      const options = {
-        key: orderData.key,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'Rewear Points',
-        description: `Purchase ${points} points`,
-        order_id: orderData.orderId,
-        prefill: {
-          contact: '',
-          email: '',
-        },
-        notes: {
-          points: points.toString(),
-          upiId: upiId.trim(),
-        },
-        theme: {
-          color: '#10b981',
-        },
-        handler: async function (response) {
-          try {
-            // Verify payment
-            const verifyRes = await fetch('/api/payment/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                transactionId: orderData.transactionId,
-              }),
-            });
-
-            const verifyData = await verifyRes.json();
-
-            if (verifyRes.ok) {
-              toast.success(verifyData.message);
-              setUpiId('');
-              setPoints(100);
-              await refreshSession(); // Refresh user session to get updated points
-            } else {
-              toast.error(verifyData.error || 'Payment verification failed');
-            }
-          } catch (error) {
-            console.error('Payment verification error:', error);
-            toast.error('Payment verification failed');
-          }
-        },
-        modal: {
-          ondismiss: function () {
-            setIsLoading(false);
-          },
-        },
-      };
-
-      if (typeof window !== 'undefined' && window.Razorpay) {
-        const rzp = new window.Razorpay(options);
-        rzp.open();
+      // Handle different payment methods
+      if (selectedPaymentApp === 'razorpay') {
+        // Use Razorpay modal for card/UPI payments
+        await handleRazorpayPayment(orderData);
       } else {
-        throw new Error('Razorpay is not available. Please refresh the page and try again.');
+        // Redirect to specific payment app
+        await handlePaymentAppRedirect(selectedPaymentApp, orderData);
       }
 
     } catch (error) {
       console.error('Purchase error:', error);
       toast.error(error.message || 'Failed to initiate purchase');
       setIsLoading(false);
+    }
+  };
+
+  const handleRazorpayPayment = async (orderData) => {
+    const options = {
+      key: orderData.key,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      name: 'Rewear Points',
+      description: `Purchase ${points} points`,
+      order_id: orderData.orderId,
+      prefill: {
+        contact: '',
+        email: '',
+      },
+      notes: {
+        points: points.toString(),
+        paymentMethod: selectedPaymentApp,
+      },
+      theme: {
+        color: '#10b981',
+      },
+      handler: async function (response) {
+        try {
+          // Verify payment
+          const verifyRes = await fetch('/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              transactionId: orderData.transactionId,
+            }),
+          });
+
+          const verifyData = await verifyRes.json();
+
+          if (verifyRes.ok) {
+            toast.success(verifyData.message);
+            setSelectedPaymentApp('');
+            setPoints(100);
+            await refreshSession();
+          } else {
+            toast.error(verifyData.error || 'Payment verification failed');
+          }
+        } catch (error) {
+          console.error('Payment verification error:', error);
+          toast.error('Payment verification failed');
+        }
+      },
+      modal: {
+        ondismiss: function () {
+          setIsLoading(false);
+        },
+      },
+    };
+
+    if (typeof window !== 'undefined' && window.Razorpay) {
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } else {
+      throw new Error('Razorpay is not available. Please refresh the page and try again.');
+    }
+  };
+
+  const handlePaymentAppRedirect = async (appId, orderData) => {
+    // Generate UPI payment link for the selected app
+    const upiLink = generateUPILink(appId, orderData);
+    
+    if (upiLink) {
+      // Open the payment app
+      window.open(upiLink, '_blank');
+      
+      // Show success message
+      toast.success(`Redirecting to ${PAYMENT_APPS[appId].name}...`);
+      
+      // Reset form
+      setSelectedPaymentApp('');
+      setPoints(100);
+      setIsLoading(false);
+      
+      // Note: For UPI apps, you'll need to implement webhook verification
+      // since direct redirect doesn't provide payment confirmation
+    } else {
+      throw new Error(`Payment method ${appId} is not supported yet`);
     }
   };
 
@@ -144,21 +181,29 @@ export default function PointsPurchase() {
           </div>
         </div>
 
-        {/* UPI ID Input */}
+        {/* Payment App Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            UPI ID <span className="text-red-500">*</span>
+            Select Payment Method <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            value={upiId}
-            onChange={(e) => setUpiId(e.target.value)}
-            placeholder="username@upi (e.g., john@okicici)"
-            className="form-input"
-            required
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Enter your UPI ID to receive payment confirmation
+          <div className="grid grid-cols-2 gap-3">
+            {Object.entries(PAYMENT_APPS).map(([appId, app]) => (
+              <button
+                key={appId}
+                onClick={() => handlePaymentAppSelect(appId)}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 flex items-center space-x-3 ${
+                  selectedPaymentApp === appId
+                    ? 'border-emerald-500 bg-emerald-100 ring-2 ring-emerald-300'
+                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'
+                }`}
+              >
+                <span className="text-2xl">{app.icon}</span>
+                <span className="font-medium text-gray-700">{app.name}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Choose your preferred payment method to continue
           </p>
         </div>
 
@@ -183,9 +228,9 @@ export default function PointsPurchase() {
         {/* Purchase Button */}
         <button
           onClick={handlePurchase}
-          disabled={isLoading || !upiId.trim()}
+          disabled={isLoading || !selectedPaymentApp}
           className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 ${
-            isLoading || !upiId.trim()
+            isLoading || !selectedPaymentApp
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105 shadow-lg'
           }`}
@@ -202,7 +247,7 @@ export default function PointsPurchase() {
 
         {/* Info */}
         <div className="text-xs text-gray-500 text-center">
-          <p>• Secure payment via Razorpay</p>
+          <p>• Secure payment via multiple payment methods</p>
           <p>• Points are added instantly after successful payment</p>
           <p>• 1 Point = ₹1 (1:1 ratio)</p>
         </div>

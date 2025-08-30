@@ -24,10 +24,14 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { points, upiId } = await req.json();
+    const { points, paymentMethod, upiId } = await req.json();
 
     if (!points || points <= 0) {
       return NextResponse.json({ error: 'Invalid points amount' }, { status: 400 });
+    }
+
+    if (!paymentMethod) {
+      return NextResponse.json({ error: 'Payment method is required' }, { status: 400 });
     }
 
     // Calculate amount in paise (₹1 = 100 paise)
@@ -47,6 +51,7 @@ export async function POST(req) {
       receipt: `points_${Date.now()}`,
       notes: {
         points: points.toString(),
+        paymentMethod: paymentMethod,
         upiId: upiId || '',
         userId: sessionUser.email
       }
@@ -59,14 +64,15 @@ export async function POST(req) {
       amount: amountInPaise / 100, // Convert back to rupees
       points: points,
       status: 'pending',
-      paymentMethod: 'razorpay',
+      paymentMethod: paymentMethod,
       razorpayOrderId: order.id,
       upiId: upiId || null,
-      description: `Purchase of ${points} points via UPI`,
+      description: `Purchase of ${points} points via ${paymentMethod}`,
       metadata: {
         orderId: order.id,
         currency: 'INR',
-        receipt: order.receipt
+        receipt: order.receipt,
+        paymentMethod: paymentMethod
       }
     });
 
@@ -82,7 +88,7 @@ export async function POST(req) {
   } catch (error) {
     console.error('Error creating order:', error);
     return NextResponse.json({ 
-      error: 'Failed to create payment order',
+      error: 'Failed to create order',
       details: error.message 
     }, { status: 500 });
   }
