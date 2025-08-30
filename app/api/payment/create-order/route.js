@@ -1,4 +1,3 @@
-// app/api/payment/create-order/route.js
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import connectDB from '@/utils/db';
@@ -82,21 +81,42 @@ export async function POST(req) {
         key_secret: process.env.RAZORPAY_KEY_SECRET,
       });
 
-      // Create Razorpay order
-      const order = await razorpay.orders.create({
-        amount: amountInPaise,
-        currency: 'INR',
-        receipt: `pts_${Date.now()}`, // <= 40 chars
-        notes: {
-          pts: points.toString(),
-          method: paymentMethod,
-          upi: upiId || '',
-          user: sessionUser.email
-        }
-      });
-      
+      let razorpayResponse;
+      let isQR = false;
 
-      console.log('Razorpay order created:', order.id);
+      if (mappedPaymentMethod === 'upi') {
+        // Create QR code for UPI payments
+        razorpayResponse = await razorpay.qrCode.create({
+          type: 'upi_qr',
+          name: `Purchase_${points}_points`,
+          usage: 'single_use',
+          fixed_amount: true,
+          payment_amount: amountInPaise,
+          description: `Purchase of ${points} points via ${paymentMethod}`,
+          notes: {
+            pts: points.toString(),
+            method: paymentMethod,
+            upi: upiId || '',
+            user: sessionUser.email,
+          },
+        });
+        isQR = true;
+        console.log('Razorpay QR created:', razorpayResponse.id);
+      } else {
+        // Create standard Razorpay order for non-UPI methods
+        razorpayResponse = await razorpay.orders.create({
+          amount: amountInPaise,
+          currency: 'INR',
+          receipt: `pts_${Date.now()}`,
+          notes: {
+            pts: points.toString(),
+            method: paymentMethod,
+            upi: upiId || '',
+            user: sessionUser.email
+          }
+        });
+        console.log('Razorpay order created:', razorpayResponse.id);
+      }
 
       // Create transaction record
       const transaction = await Transaction.create({
@@ -106,13 +126,15 @@ export async function POST(req) {
         points: points,
         status: 'pending',
         paymentMethod: mappedPaymentMethod,
-        razorpayOrderId: order.id,
+        razorpayOrderId: isQR ? null : razorpayResponse.id,
+        razorpayQrId: isQR ? razorpayResponse.id : null,
         upiId: upiId || null,
         description: `Purchase of ${points} points via ${paymentMethod}`,
         metadata: {
-          orderId: order.id,
+          orderId: isQR ? null : razorpayResponse.id,
+          qrId: isQR ? razorpayResponse.id : null,
           currency: 'INR',
-          receipt: order.receipt,
+          receipt: razorpayResponse.receipt || `qr_${Date.now()}`,
           paymentMethod: paymentMethod,
           originalPaymentMethod: paymentMethod
         }
@@ -120,20 +142,22 @@ export async function POST(req) {
 
       console.log('Transaction created:', transaction._id);
 
+      // Return response with conditional fields
       return NextResponse.json({
         success: true,
-        orderId: order.id,
-        amount: amountInPaise,
-        currency: 'INR',
+        ...(isQR
+          ? { qrId: razorpayResponse.id, imageUrl: razorpayResponse.image_url }
+          : { orderId: razorpayResponse.id, amount: amountInPaise, currency: 'INR' }),
         transactionId: transaction._id,
-        key: process.env.RAZORPAY_KEY_ID
+        key: process.env.RAZORPAY_KEY_ID,
+        isQR
       });
 
     } catch (razorpayError) {
       console.error('Razorpay error:', razorpayError);
       return NextResponse.json({ 
         error: 'Payment gateway error',
-        details: razorpayError.message || 'Failed to create payment order'
+        details: razorpayError.message || 'Failed to create payment order or QR code'
       }, { status: 500 });
     }
 
