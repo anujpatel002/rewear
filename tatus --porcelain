@@ -1,0 +1,3 @@
+[33me2eec95[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update MongoDB URL and add deploy script
+[33mbd0f1d4[m Update MongoDB URL and add deployment scripts
+[33m8340138[m Improve auth error handling and remove bcrypt dependency
