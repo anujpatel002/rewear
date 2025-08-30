@@ -142,16 +142,23 @@ export default function PointsPurchase() {
         await handleRazorpayPayment(orderData);
       } else {
         // For UPI apps, show QR code on desktop, redirect on mobile
+        console.log('Processing UPI payment app:', selectedPaymentApp, 'isDesktop:', isDesktop);
+        
         if (isDesktop) {
           // Generate QR code for desktop users
+          console.log('Generating QR code for desktop user');
           const upiData = generateUPIData(selectedPaymentApp, orderData);
           if (upiData) {
             setQrCodeData(upiData);
             setShowQRCode(true);
+            setIsLoading(false); // Stop loading for QR code display
             toast.success(`QR code generated! Scan with ${PAYMENT_APPS[selectedPaymentApp].name} to pay`);
+          } else {
+            throw new Error('Failed to generate UPI data for QR code');
           }
         } else {
           // Redirect to payment app on mobile
+          console.log('Redirecting mobile user to payment app');
           await handlePaymentAppRedirect(selectedPaymentApp, orderData);
         }
       }
@@ -332,6 +339,14 @@ export default function PointsPurchase() {
           <p className="text-xs text-gray-500 mt-2">
             Choose your preferred payment method to continue
           </p>
+          
+          {/* Debug Info - Remove in production */}
+          <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+            <div>Device: {isDesktop ? '🖥️ Desktop' : '📱 Mobile'}</div>
+            <div>Selected: {selectedPaymentApp || 'None'}</div>
+            <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
+            <div>QR Code: {showQRCode ? 'Shown' : 'Hidden'}</div>
+          </div>
         </div>
 
         {/* QR Code Option for Desktop */}
@@ -348,6 +363,25 @@ export default function PointsPurchase() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 {isLoading ? 'Generating...' : 'Generate QR Code'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Manual QR Code Generation for Testing */}
+        {selectedPaymentApp && selectedPaymentApp !== 'razorpay' && (
+          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-yellow-800">🧪 Test QR Code Generation</h4>
+                <p className="text-sm text-yellow-600">Force generate QR code for testing</p>
+              </div>
+              <button
+                onClick={generateQRCode}
+                disabled={isLoading}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+              >
+                {isLoading ? 'Generating...' : 'Test QR Code'}
               </button>
             </div>
           </div>
