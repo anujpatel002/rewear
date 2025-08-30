@@ -1,5 +1,5 @@
 // File: models/Transaction.js
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
   userId: {

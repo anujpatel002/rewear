@@ -18,126 +18,143 @@ const connectDB = async () => {
 
 // ✅ POST Handler
 export async function POST(request, { params }) {
-  const { action } = await params;
-  await connectDB();
-  const body = await request.json();
+  try {
+    const { action } = await params;
+    console.log('Auth action:', action);
+    
+    await connectDB();
+    const body = await request.json();
+    console.log('Request body:', { ...body, password: '[HIDDEN]' });
 
-  if (action[0] === 'signup') {
-    const { name, email, password, confirmPassword, role } = body;
+    if (action[0] === 'signup') {
+      const { name, email, password, confirmPassword, role } = body;
 
-    if (!name || !email || !password || !confirmPassword) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+      if (!name || !email || !password || !confirmPassword) {
+        console.log('Missing required fields:', { name: !!name, email: !!email, password: !!password, confirmPassword: !!confirmPassword });
+        return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+      }
+
+      if (password !== confirmPassword) {
+        console.log('Password mismatch');
+        return NextResponse.json({ error: 'Passwords do not match' }, { status: 400 });
+      }
+
+      console.log('Checking for existing user with email:', email);
+      const existingUser = await rewear_User.findOne({ email });
+      if (existingUser) {
+        console.log('User already exists:', email);
+        return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+      }
+
+      console.log('Creating new user:', { name, email, role: role || 'user' });
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = await rewear_User.create({ name, email, password: hashedPassword, role: role || 'user' });
+      console.log('User created successfully:', newUser._id);
+
+      return NextResponse.json({ message: 'Signup successful!' }, { status: 201 });
     }
 
-    if (password !== confirmPassword) {
-      return NextResponse.json({ error: 'Passwords do not match' }, { status: 400 });
+    if (action[0] === 'login') {
+      const { email, password } = body;
+
+      if (!email || !password) {
+        return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+      }
+
+      const user = await rewear_User.findOne({ email });
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      }
+
+      // Set isActive to true on login
+      user.isActive = true;
+      await user.save();
+
+      // Determine user role (admin@gmail.com is admin, otherwise use user.role)
+      const userRole = email === 'admin@gmail.com' ? 'admin' : (user.role || 'user');
+
+      // Set session cookie with user info
+      const response = NextResponse.json({
+        message: 'Login successful',
+        user: { name: user.name, email: user.email, role: userRole },
+      });
+
+      response.cookies.set('session', JSON.stringify({ name: user.name, email: user.email }), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24, // 1 day
+      });
+
+      // Set role cookie for middleware
+      response.cookies.set('role', userRole, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24, // 1 day
+      });
+
+      return response;
     }
 
-    const existingUser = await rewear_User.findOne({ email });
-    if (existingUser) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+    if (action[0] === 'forgot-password') {
+      const { email } = body;
+
+      const user = await rewear_User.findOne({ email });
+      if (!user) {
+        return NextResponse.json({ error: 'No user found with this email' }, { status: 404 });
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiry = Date.now() + 3600000; // 1 hour
+
+      user.resetToken = token;
+      user.resetTokenExpiry = expiry;
+      await user.save();
+
+      const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/forgot-password?token=${token}`;
+      await sendMail(user.email, 'Reset Password', `Click here: ${resetUrl}`);
+
+      return NextResponse.json({ message: 'Reset link sent to your email' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await rewear_User.create({ name, email, password: hashedPassword, role: role || 'user' });
+    if (action[0] === 'reset-password') {
+      const { token, password, confirmPassword } = body;
 
-    return NextResponse.json({ message: 'Signup successful!' }, { status: 201 });
+      if (password !== confirmPassword) {
+        return NextResponse.json({ error: 'Passwords do not match' }, { status: 400 });
+      }
+
+      const user = await rewear_User.findOne({
+        resetToken: token,
+        resetTokenExpiry: { $gt: Date.now() },
+      });
+
+      if (!user) {
+        return NextResponse.json({ error: 'Invalid or expired token' }, { status: 400 });
+      }
+
+      user.password = await bcrypt.hash(password, 10);
+      user.resetToken = undefined;
+      user.resetTokenExpiry = undefined;
+      await user.save();
+
+      return NextResponse.json({ message: 'Password reset successful' });
+    }
+
+    return NextResponse.json({ error: 'Invalid route' }, { status: 404 });
+  } catch (error) {
+    console.error('Auth API error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+    }, { status: 500 });
   }
-
-  if (action[0] === 'login') {
-    const { email, password } = body;
-
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
-    }
-
-    const user = await rewear_User.findOne({ email });
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-    }
-
-    // Set isActive to true on login
-    user.isActive = true;
-    await user.save();
-
-    // Determine user role (admin@gmail.com is admin, otherwise use user.role)
-    const userRole = email === 'admin@gmail.com' ? 'admin' : (user.role || 'user');
-
-    // Set session cookie with user info
-    const response = NextResponse.json({
-      message: 'Login successful',
-      user: { name: user.name, email: user.email, role: userRole },
-    });
-
-    response.cookies.set('session', JSON.stringify({ name: user.name, email: user.email }), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24, // 1 day
-    });
-
-    // Set role cookie for middleware
-    response.cookies.set('role', userRole, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24, // 1 day
-    });
-
-    return response;
-  }
-
-  if (action[0] === 'forgot-password') {
-    const { email } = body;
-
-    const user = await rewear_User.findOne({ email });
-    if (!user) {
-      return NextResponse.json({ error: 'No user found with this email' }, { status: 404 });
-    }
-
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiry = Date.now() + 3600000; // 1 hour
-
-    user.resetToken = token;
-    user.resetTokenExpiry = expiry;
-    await user.save();
-
-    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/forgot-password?token=${token}`;
-    await sendMail(user.email, 'Reset Password', `Click here: ${resetUrl}`);
-
-    return NextResponse.json({ message: 'Reset link sent to your email' });
-  }
-
-  if (action[0] === 'reset-password') {
-    const { token, password, confirmPassword } = body;
-
-    if (password !== confirmPassword) {
-      return NextResponse.json({ error: 'Passwords do not match' }, { status: 400 });
-    }
-
-    const user = await rewear_User.findOne({
-      resetToken: token,
-      resetTokenExpiry: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 400 });
-    }
-
-    user.password = await bcrypt.hash(password, 10);
-    user.resetToken = undefined;
-    user.resetTokenExpiry = undefined;
-    await user.save();
-
-    return NextResponse.json({ message: 'Password reset successful' });
-  }
-
-  return NextResponse.json({ error: 'Invalid route' }, { status: 404 });
 }

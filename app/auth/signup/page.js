@@ -88,14 +88,16 @@ export default function Signup() {
       let data;
       try {
         data = await response.json();
-      } catch {
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
         toast.error('Unexpected server response. Please try again.');
         setLoading(false);
         return;
       }
 
       if (!response.ok) {
-        toast.error(data.error || 'Signup failed');
+        console.error('Signup error:', data);
+        toast.error(data.error || `Signup failed: ${response.status} ${response.statusText}`);
         setLoading(false);
         return;
       }
@@ -105,7 +107,8 @@ export default function Signup() {
 
       setTimeout(() => router.push('/auth/login'), 2000);
     } catch (err) {
-      toast.error(err.message || 'Something went wrong');
+      console.error('Signup error:', err);
+      toast.error(err.message || 'Network error. Please check your connection and try again.');
       setLoading(false);
     }
   };

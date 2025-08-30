@@ -11,7 +11,6 @@
     "server": "node backend/page.js"
   },
   "dependencies": {
-    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "concurrently": "^9.2.0",
     "cookies": "^0.9.1",
