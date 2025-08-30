@@ -90,5 +90,8 @@ export async function POST(req) {
     createdAt: new Date(),
   });
 
-  return NextResponse.json({ message: 'Item submitted for approval', item: newItem });
+  return NextResponse.json({ 
+    message: `🎉 Success! "${title}" has been submitted for approval. You'll be notified once it's approved.`, 
+    item: newItem 
+  });
 }

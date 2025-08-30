@@ -6,6 +6,8 @@ import { useSocket } from '@/context/SocketContext';
 import { fetchSession } from '@/utils/session';
 import { Country, State, City } from 'country-state-city';
 import { useSession } from '@/context/SessionContext';
+import PointsPurchase from '@/Components/PointsPurchase/page';
+import TransactionHistory from '@/Components/TransactionHistory/page';
 
 export default function DashboardPage() {
     const [user, setUser] = useState(null);
@@ -108,7 +110,7 @@ export default function DashboardPage() {
                 {user.name}&apos;s Dashboard
             </h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Profile Card */}
                 <div className="card p-6 transition hover:shadow-md">
                     <h2 className="text-xl font-semibold mb-4 flex items-center justify-between">
@@ -346,6 +348,11 @@ export default function DashboardPage() {
                     )}
                 </div>
 
+                {/* Points Purchase */}
+                <div className="lg:col-span-1">
+                    <PointsPurchase />
+                </div>
+
                 {/* Swap Status */}
                 <div className="card p-6 col-span-full">
                     <h2 className="text-xl font-semibold mb-4">Swaps</h2>
@@ -437,6 +444,11 @@ export default function DashboardPage() {
                             </ul>
                         )}
                     </div>
+                </div>
+
+                {/* Transaction History */}
+                <div className="card p-6 col-span-full">
+                    <TransactionHistory />
                 </div>
             </div>
         </div>
