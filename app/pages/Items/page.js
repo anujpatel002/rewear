@@ -197,26 +197,26 @@ export default function AdminItemsPage() {
                       type="text"
                       value={editForm.title}
                       onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
-                      className="border border-border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="form-input"
                       required
                     />
                     <input
                       type="text"
                       value={editForm.category}
                       onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
-                      className="border border-border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="form-input"
                       required
                     />
                     <input
                       type="text"
                       value={editForm.imageUrl}
                       onChange={e => setEditForm(f => ({ ...f, imageUrl: e.target.value }))}
-                      className="border border-border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="form-input"
                     />
                     <textarea
                       value={editForm.description}
                       onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
-                      className="border border-border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="form-textarea"
                       required
                     />
                     <div className="flex gap-2">

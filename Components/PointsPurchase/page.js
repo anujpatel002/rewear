@@ -154,7 +154,7 @@ export default function PointsPurchase() {
             value={upiId}
             onChange={(e) => setUpiId(e.target.value)}
             placeholder="username@upi (e.g., john@okicici)"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            className="form-input"
             required
           />
           <p className="text-xs text-gray-500 mt-1">

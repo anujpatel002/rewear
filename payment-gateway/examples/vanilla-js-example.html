@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Payment Gateway - Vanilla JS Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .payment-button {
+            width: 100%;
+            padding: 15px;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .payment-button:hover:not(:disabled) {
+            background-color: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .payment-button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .payment-status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+
+        .payment-status.success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 2px solid #a7f3d0;
+        }
+
+        .payment-status.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #fecaca;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .amount-display {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            margin: 20px 0;
+            border: 2px solid #0ea5e9;
+        }
+
+        .amount-display h3 {
+            margin: 0 0 10px 0;
+            color: #0c4a6e;
+        }
+
+        .amount-display .amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💳 Universal Payment Gateway</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Vanilla JavaScript Example
+        </p>
+
+        <div class="form-group">
+            <label for="amount">Amount:</label>
+            <input type="number" id="amount" value="100" min="1" step="1">
+        </div>
+
+        <div class="form-group">
+            <label for="currency">Currency:</label>
+            <select id="currency">
+                <option value="INR">INR (₹)</option>
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="customerEmail">Customer Email:</label>
+            <input type="email" id="customerEmail" placeholder="customer@example.com">
+        </div>
+
+        <div class="form-group">
+            <label for="customerName">Customer Name:</label>
+            <input type="text" id="customerName" placeholder="John Doe">
+        </div>
+
+        <div class="amount-display">
+            <h3>Payment Summary</h3>
+            <div class="amount" id="amountDisplay">₹100</div>
+        </div>
+
+        <button id="payButton" class="payment-button">
+            Pay ₹100
+        </button>
+
+        <div id="paymentStatus" class="payment-status"></div>
+    </div>
+
+    <!-- Load Razorpay script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <!-- Load the payment gateway (in production, this would be from npm) -->
+    <script>
+        // This is a simplified version for demonstration
+        // In production, you would import from the actual package
+        
+        class SimplePaymentGateway {
+            constructor(publicKey) {
+                this.publicKey = publicKey;
+            }
+
+            async processPayment(paymentRequest) {
+                return new Promise((resolve, reject) => {
+                    if (typeof window === 'undefined' || !window.Razorpay) {
+                        reject(new Error('Razorpay is not available'));
+                        return;
+                    }
+
+                    const options = {
+                        key: this.publicKey,
+                        amount: paymentRequest.amount * 100, // Convert to paise
+                        currency: paymentRequest.currency,
+                        name: 'Your Company Name',
+                        description: paymentRequest.description,
+                        order_id: paymentRequest.orderId,
+                        prefill: {
+                            name: paymentRequest.customerName || '',
+                            email: paymentRequest.customerEmail || '',
+                        },
+                        notes: paymentRequest.metadata || {},
+                        theme: {
+                            color: '#10b981'
+                        },
+                        handler: (response) => {
+                            resolve({
+                                success: true,
+                                orderId: response.razorpay_order_id,
+                                paymentId: response.razorpay_payment_id,
+                                amount: paymentRequest.amount,
+                                currency: paymentRequest.currency,
+                                status: 'completed',
+                                message: 'Payment completed successfully',
+                                metadata: { 
+                                    gateway: 'razorpay',
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id
+                                }
+                            });
+                        },
+                        modal: {
+                            ondismiss: () => {
+                                reject(new Error('Payment was cancelled by user'));
+                            }
+                        }
+                    };
+
+                    try {
+                        const rzp = new window.Razorpay(options);
+                        rzp.open();
+                    } catch (error) {
+                        reject(new Error('Failed to open payment modal'));
+                    }
+                });
+            }
+        }
+
+        // Initialize payment gateway
+        const gateway = new SimplePaymentGateway('rzp_test_your_key_here'); // Replace with your test key
+
+        // DOM elements
+        const amountInput = document.getElementById('amount');
+        const currencySelect = document.getElementById('currency');
+        const customerEmailInput = document.getElementById('customerEmail');
+        const customerNameInput = document.getElementById('customerName');
+        const payButton = document.getElementById('payButton');
+        const amountDisplay = document.getElementById('amountDisplay');
+        const paymentStatus = document.getElementById('paymentStatus');
+
+        // Update amount display
+        function updateAmountDisplay() {
+            const amount = amountInput.value;
+            const currency = currencySelect.value;
+            const symbol = currency === 'INR' ? '₹' : currency === 'USD' ? '$' : '€';
+            amountDisplay.textContent = `${symbol}${amount}`;
+            payButton.textContent = `Pay ${symbol}${amount}`;
+        }
+
+        // Event listeners
+        amountInput.addEventListener('input', updateAmountDisplay);
+        currencySelect.addEventListener('change', updateAmountDisplay);
+
+        // Payment button click handler
+        payButton.addEventListener('click', async () => {
+            const amount = Number(amountInput.value);
+            const currency = currencySelect.value;
+            const customerEmail = customerEmailInput.value;
+            const customerName = customerNameInput.value;
+
+            // Validation
+            if (!customerEmail || !customerName) {
+                showStatus('Please fill in all required fields', 'error');
+                return;
+            }
+
+            if (amount <= 0) {
+                showStatus('Please enter a valid amount', 'error');
+                return;
+            }
+
+            // Disable button and show loading
+            payButton.disabled = true;
+            payButton.innerHTML = '<span class="loading"></span>Processing...';
+
+            try {
+                const paymentRequest = {
+                    amount,
+                    currency,
+                    orderId: `order_${Date.now()}`,
+                    description: `Payment for ${currency} ${amount}`,
+                    customerEmail,
+                    customerName,
+                    metadata: {
+                        source: 'vanilla-js-example',
+                        timestamp: new Date().toISOString()
+                    }
+                };
+
+                const response = await gateway.processPayment(paymentRequest);
+                
+                if (response.success) {
+                    showStatus(`Payment successful! Transaction ID: ${response.transactionId || response.paymentId}`, 'success');
+                    // Clear form
+                    customerEmailInput.value = '';
+                    customerNameInput.value = '';
+                } else {
+                    showStatus(`Payment failed: ${response.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Payment failed: ${error.message}`, 'error');
+            } finally {
+                // Re-enable button
+                payButton.disabled = false;
+                payButton.innerHTML = `Pay ${currency === 'INR' ? '₹' : currency === 'USD' ? '$' : '€'}${amount}`;
+            }
+        });
+
+        // Show status message
+        function showStatus(message, type) {
+            paymentStatus.textContent = message;
+            paymentStatus.className = `payment-status ${type}`;
+            paymentStatus.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                paymentStatus.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialize amount display
+        updateAmountDisplay();
+    </script>
+</body>
+</html>

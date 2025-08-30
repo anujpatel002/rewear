@@ -124,7 +124,7 @@ export default function ListItemForm() {
         value={formFields.title}
         onChange={handleChange}
         required
-        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        className="form-input"
       />
 
       <textarea
@@ -133,7 +133,7 @@ export default function ListItemForm() {
         value={formFields.description}
         onChange={handleChange}
         required
-        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        className="form-textarea"
       />
 
       {/* Category Dropdown */}
@@ -142,7 +142,7 @@ export default function ListItemForm() {
         value={formFields.category}
         onChange={handleChange}
         required
-        className="w-full p-3 border border-border rounded bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+        className="form-select"
       >
         <option value="" disabled>Select Category</option>
         <option value="Tops">Tops</option>
@@ -163,7 +163,7 @@ export default function ListItemForm() {
         value={formFields.type}
         onChange={handleChange}
         required
-        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        className="form-input"
       />
 
       <input
@@ -173,7 +173,7 @@ export default function ListItemForm() {
         value={formFields.size}
         onChange={handleChange}
         required
-        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        className="form-input"
       />
 
       <input
@@ -183,7 +183,7 @@ export default function ListItemForm() {
         value={formFields.condition}
         onChange={handleChange}
         required
-        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        className="form-input"
       />
 
       <input
@@ -192,7 +192,7 @@ export default function ListItemForm() {
         placeholder="Tags (comma separated)"
         value={formFields.tags}
         onChange={handleChange}
-        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        className="form-input"
       />
 
       <input
@@ -202,7 +202,7 @@ export default function ListItemForm() {
         value={formFields.points}
         onChange={handleChange}
         min="0"
-        className="w-full p-3 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        className="form-input"
         required
       />
 

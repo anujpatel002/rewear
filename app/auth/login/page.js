@@ -112,9 +112,10 @@ export default function LoginPage() {
             <input
               type="email"
               name="email"
+              id="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full mt-1 px-4 py-2 border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+              className="form-input"
               required
             />
           </div>
@@ -126,7 +127,7 @@ export default function LoginPage() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full mt-1 px-4 py-2 border border-border rounded pr-10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="form-input pr-10 transition-all duration-200"
                 required
               />
               <button

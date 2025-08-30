@@ -128,7 +128,7 @@ export default function Signup() {
               id="name"
               value={formData.name}
               onChange={handleChange}
-              className="mt-1 block w-full px-4 py-2 border border-border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="form-input"
               required
             />
           </div>
@@ -141,7 +141,7 @@ export default function Signup() {
               id="email"
               value={formData.email}
               onChange={handleChange}
-              className="mt-1 block w-full px-4 py-2 border border-border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="form-input"
               required
             />
           </div>
@@ -155,7 +155,7 @@ export default function Signup() {
                 id="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-2 border border-border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary pr-10 transition-all duration-200"
+                className="form-input pr-10 transition-all duration-200"
                 required
               />
               <button
@@ -181,7 +181,7 @@ export default function Signup() {
                 id="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="mt-1 block w-full px-4 py-2 border border-border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary pr-10 transition-all duration-200"
+                className="form-input pr-10 transition-all duration-200"
                 required
               />
               <button
