@@ -1,36 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import { useSession } from '@/context/SessionContext';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { PAYMENT_APPS, generateUPILink } from '@/config/payment-apps';
+import { useSession } from '@/context/SessionContext';
 
 export default function PointsPurchase() {
   const [points, setPoints] = useState(100);
   const [selectedPaymentApp, setSelectedPaymentApp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeData, setQrCodeData] = useState(null);
-  const [isDesktop, setIsDesktop] = useState(false);
   const { refreshSession } = useSession();
 
-  const pointsOptions = [50, 100, 200, 500, 1000, 2000];
+  const pointsOptions = [100, 200, 500, 1000];
 
-  // Check if user is on desktop
+  // Detect if user is on desktop
   useEffect(() => {
     const checkDevice = () => {
       const userAgent = navigator.userAgent.toLowerCase();
-      const isMobile = /mobile|android|iphone|ipad|phone/i.test(userAgent);
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
       setIsDesktop(!isMobile);
     };
-    
+
     checkDevice();
     window.addEventListener('resize', checkDevice);
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
-  const handlePointsChange = (value) => {
-    setPoints(value);
+  const handlePointsChange = (newPoints) => {
+    setPoints(newPoints);
     setShowQRCode(false);
     setQrCodeData(null);
   };
@@ -41,14 +41,35 @@ export default function PointsPurchase() {
     setQrCodeData(null);
   };
 
+  const generateUPIData = (appId, orderData) => {
+    const app = PAYMENT_APPS[appId];
+    if (!app) return null;
+    
+    const amount = orderData.amount / 100; // Convert from paise to rupees
+    const orderId = orderData.orderId;
+    
+    const upiData = {
+      merchantUPI: PAYMENT_APPS[appId].merchantUPI || 'anujvelani6@oksbi',
+      amount: amount,
+      orderId: orderId,
+      appName: app.name,
+      qrCode: `upi://pay?pa=${PAYMENT_APPS[appId].merchantUPI || 'anujvelani6@oksbi'}&pn=Rewear&am=${amount}&tn=Points Purchase ${orderId}&cu=INR`
+    };
+    
+    return upiData;
+  };
+
   const generateQRCode = async () => {
-    if (!selectedPaymentApp) {
-      toast.error('Please select a payment method first');
+    if (!selectedPaymentApp || selectedPaymentApp === 'razorpay') {
+      toast.error('Please select a UPI payment app first');
       return;
     }
 
     setIsLoading(true);
+
     try {
+      console.log('Generating QR code for:', selectedPaymentApp);
+      
       // Create order first
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
@@ -61,45 +82,29 @@ export default function PointsPurchase() {
       });
 
       const orderData = await orderRes.json();
+      console.log('Order response for QR code:', orderData);
 
       if (!orderRes.ok) {
-        throw new Error(orderData.error || 'Failed to create order');
+        throw new Error(orderData.error || orderData.details || 'Failed to create order');
       }
 
-      // Generate UPI QR code data
+      // Generate UPI data for QR code
       const upiData = generateUPIData(selectedPaymentApp, orderData);
-      setQrCodeData(upiData);
-      setShowQRCode(true);
       
-      toast.success('QR Code generated! Scan with any UPI app to pay');
-      
+      if (upiData) {
+        setQrCodeData(upiData);
+        setShowQRCode(true);
+        toast.success(`QR code generated for ${PAYMENT_APPS[selectedPaymentApp].name}`);
+      } else {
+        throw new Error('Failed to generate UPI data');
+      }
+
     } catch (error) {
-      console.error('QR Code generation error:', error);
+      console.error('QR code generation error:', error);
       toast.error(error.message || 'Failed to generate QR code');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const generateUPIData = (appId, orderData) => {
-    const amount = orderData.amount / 100; // Convert from paise to rupees
-    const orderId = orderData.orderId;
-    
-    // UPI QR code format
-    const upiData = {
-      payee: {
-        vpa: 'anujvelani6@oksbi', // Your UPI ID
-        name: 'Rewear',
-      },
-      amount: amount,
-      currency: 'INR',
-      transactionNote: `Points Purchase ${orderId}`,
-      orderId: orderId,
-      transactionId: orderData.transactionId,
-      qrCode: `upi://pay?pa=anujvelani6@oksbi&pn=Rewear&am=${amount}&tn=Points Purchase ${orderId}&cu=INR`
-    };
-    
-    return upiData;
   };
 
   const handlePurchase = async () => {
@@ -136,8 +141,19 @@ export default function PointsPurchase() {
         // Use Razorpay modal for card/UPI payments
         await handleRazorpayPayment(orderData);
       } else {
-        // Redirect to specific payment app
-        await handlePaymentAppRedirect(selectedPaymentApp, orderData);
+        // For UPI apps, show QR code on desktop, redirect on mobile
+        if (isDesktop) {
+          // Generate QR code for desktop users
+          const upiData = generateUPIData(selectedPaymentApp, orderData);
+          if (upiData) {
+            setQrCodeData(upiData);
+            setShowQRCode(true);
+            toast.success(`QR code generated! Scan with ${PAYMENT_APPS[selectedPaymentApp].name} to pay`);
+          }
+        } else {
+          // Redirect to payment app on mobile
+          await handlePaymentAppRedirect(selectedPaymentApp, orderData);
+        }
       }
 
     } catch (error) {
@@ -381,6 +397,10 @@ export default function PointsPurchase() {
                     <span className="font-medium text-gray-600">Payment Method:</span>
                     <span className="font-semibold">{PAYMENT_APPS[selectedPaymentApp]?.name}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">UPI ID:</span>
+                    <span className="font-mono text-xs">{qrCodeData.merchantUPI}</span>
+                  </div>
                 </div>
                 
                 <div className="pt-3 space-y-2">
@@ -401,58 +421,47 @@ export default function PointsPurchase() {
                     ❌ Close QR Code
                   </button>
                 </div>
-                
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                  <div className="text-xs text-blue-700 space-y-1">
-                    <div className="font-medium">💡 How to Pay:</div>
-                    <div>• Open any UPI app (Google Pay, PhonePe, Paytm)</div>
-                    <div>• Scan the QR code or paste the UPI link</div>
-                    <div>• Confirm payment of ₹{qrCodeData.amount}</div>
-                    <div>• Points will be added to your account</div>
-                  </div>
-                </div>
               </div>
+            </div>
+            
+            {/* Instructions */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h5 className="font-medium text-blue-800 mb-2">📱 How to Pay:</h5>
+              <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                <li>Open {PAYMENT_APPS[selectedPaymentApp]?.name} on your phone</li>
+                <li>Scan this QR code or use the UPI link</li>
+                <li>Enter the amount: ₹{qrCodeData.amount}</li>
+                <li>Complete the payment</li>
+                <li>Your points will be added automatically</li>
+              </ol>
             </div>
           </div>
         )}
 
-        {/* Purchase Summary */}
-        <div className="bg-white p-4 rounded-lg border border-emerald-200">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-600">Points:</span>
-            <span className="font-semibold">{points}</span>
-          </div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-600">Amount:</span>
-            <span className="font-semibold text-emerald-600">₹{points}</span>
-          </div>
-          <div className="border-t pt-2">
-            <div className="flex justify-between items-center">
-              <span className="font-semibold text-gray-800">Total:</span>
-              <span className="text-xl font-bold text-emerald-700">₹{points}</span>
-            </div>
-          </div>
-        </div>
-
         {/* Purchase Button */}
-        <button
-          onClick={handlePurchase}
-          disabled={isLoading || !selectedPaymentApp}
-          className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 ${
-            isLoading || !selectedPaymentApp
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105 shadow-lg'
-          }`}
-        >
-          {isLoading ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              <span>Processing...</span>
-            </div>
-          ) : (
-            `Purchase ${points} Points - ₹${points}`
-          )}
-        </button>
+        <div className="pt-4">
+          <button
+            onClick={handlePurchase}
+            disabled={!selectedPaymentApp || isLoading}
+            className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 ${
+              !selectedPaymentApp || isLoading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-emerald-600 hover:bg-emerald-700 transform hover:scale-105'
+            }`}
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+              </span>
+            ) : (
+              `Purchase ${points} Points for ₹${points}`
+            )}
+          </button>
+        </div>
 
         {/* Info */}
         <div className="text-xs text-gray-500 text-center">
