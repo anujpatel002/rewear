@@ -11,9 +11,7 @@ async function getSessionUser() {
     const cookieStore = cookies();
     const sessionCookie = cookieStore.get('session')?.value;
     if (!sessionCookie) return null;
-    
-    const user = JSON.parse(sessionCookie);
-    return user;
+    return JSON.parse(sessionCookie);
   } catch (error) {
     console.error('Session parsing error:', error);
     return null;
@@ -22,39 +20,28 @@ async function getSessionUser() {
 
 export async function POST(req) {
   try {
+    // 1. Validate Environment Variables
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      console.error('Missing Razorpay environment variables');
-      return NextResponse.json({ 
-        error: 'Payment gateway configuration error',
-      }, { status: 500 });
+      console.error('CRITICAL: Missing Razorpay environment variables');
+      return NextResponse.json({ error: 'Payment gateway is not configured.' }, { status: 500 });
     }
 
+    // 2. Connect to DB and Get User
     await connectDB();
-    
     const sessionUser = await getSessionUser();
-    if (!sessionUser || !sessionUser.email) {
-      return NextResponse.json({ 
-        error: 'Unauthorized - Please login again',
-      }, { status: 401 });
+    if (!sessionUser?.email) {
+      return NextResponse.json({ error: 'Unauthorized. Please log in again.' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { points, paymentMethod } = body;
-
-    if (!points || points <= 0) {
-      return NextResponse.json({ 
-        error: 'Invalid points amount',
-      }, { status: 400 });
-    }
-
-    if (!paymentMethod) {
-      return NextResponse.json({ 
-        error: 'Payment method is required',
-      }, { status: 400 });
+    // 3. Parse and Validate Request Body
+    const { points, paymentMethod } = await req.json();
+    if (!points || points <= 0 || !paymentMethod) {
+      return NextResponse.json({ error: 'Invalid request. Points and payment method are required.' }, { status: 400 });
     }
 
     const amountInPaise = points * 100;
 
+    // 4. Initialize Razorpay and Create a Standard Order
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -63,50 +50,46 @@ export async function POST(req) {
     const orderOptions = {
       amount: amountInPaise,
       currency: 'INR',
-      receipt: `pts_${Date.now()}`,
+      receipt: `receipt_rewear_${Date.now()}`,
       notes: {
-        pts: points.toString(),
-        method: paymentMethod,
-        user: sessionUser.email
-      }
+        points: points.toString(),
+        paymentMethod,
+        userEmail: sessionUser.email,
+      },
     };
 
-    // Always create a standard order
     const razorpayOrder = await razorpay.orders.create(orderOptions);
+    console.log('Successfully created Razorpay Order ID:', razorpayOrder.id);
 
-    if (!razorpayOrder) {
-      throw new Error("Failed to create Razorpay order");
-    }
-    
-    console.log('Razorpay order created:', razorpayOrder.id);
-
+    // 5. Create a Pending Transaction Record in DB
     const transaction = await Transaction.create({
       userId: sessionUser._id || sessionUser.id,
       type: 'purchase',
-      amount: points,
+      amount: points, // Store amount in rupees
       points: points,
       status: 'pending',
-      paymentMethod: paymentMethod,
-      razorpayOrderId: razorpayOrder.id,
-      description: `Purchase of ${points} points`,
+      paymentMethod: paymentMethod, // Store the original selected app (e.g., 'gpay')
+      razorpayOrderId: razorpayOrder.id, // Link to the Razorpay order
+      description: `Purchase of ${points} points via ${paymentMethod}`,
     });
+    
+    console.log('Transaction record created with ID:', transaction._id);
 
-    console.log('Transaction created:', transaction._id);
-
+    // 6. Return a Consistent Response to the Frontend
     return NextResponse.json({
       success: true,
       orderId: razorpayOrder.id,
-      amount: razorpayOrder.amount,
+      amount: razorpayOrder.amount, // Amount in paise
       currency: razorpayOrder.currency,
-      transactionId: transaction._id,
+      transactionId: transaction._id.toString(),
       key: process.env.RAZORPAY_KEY_ID,
     });
 
   } catch (error) {
-    console.error('Error creating order:', error);
-    return NextResponse.json({ 
-      error: 'Failed to create order',
-      details: error.message
+    console.error('--- CREATE ORDER FAILED ---:', error);
+    return NextResponse.json({
+      error: 'Failed to create payment order.',
+      details: error.message,
     }, { status: 500 });
   }
 }

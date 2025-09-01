@@ -1,50 +1,38 @@
-// Payment App Configuration
-// Update the MERCHANT_UPI_ID with your actual UPI ID
+// In config/payment-apps.js
 
-export const MERCHANT_UPI_ID = 'anujvelani6@oksbi'; // Replace with your actual UPI ID
+// IMPORTANT: Replace this with your actual UPI ID from Google Pay, PhonePe, etc.
+export const MERCHANT_UPI_ID = 'anujvelani6@oksbi'; 
 
 export const PAYMENT_APPS = {
   gpay: {
     name: 'Google Pay',
-    icon: '📱',
-    color: 'bg-green-500',
-    upiScheme: 'googleplay://upi/pay',
-    merchantUPI: 'anujvelani6@oksbi'
+    icon: 'G', // Using simple text icons for broad compatibility
+    upiScheme: 'upi://pay', 
   },
   phonepe: {
     name: 'PhonePe',
-    icon: '💜',
-    color: 'bg-purple-500',
-    upiScheme: 'phonepe://pay',
-    merchantUPI: 'anujvelani6@oksbi'
+    icon: 'P',
+    upiScheme: 'upi://pay',
   },
   paytm: {
     name: 'Paytm',
-    icon: '💙',
-    color: 'bg-blue-500',
-    upiScheme: 'paytmmp://pay',
-    merchantUPI: 'anujvelani6@oksbi'
+    icon: 'Pa',
+    upiScheme: 'upi://pay',
   },
   amazonpay: {
     name: 'Amazon Pay',
-    icon: '🟠',
-    color: 'bg-orange-500',
-    upiScheme: 'amazonpay://upi/pay',
-    merchantUPI: 'anujvelani6@oksbi'
+    icon: 'A',
+    upiScheme: 'upi://pay',
   },
   bhim: {
     name: 'BHIM UPI',
-    icon: '🏦',
-    color: 'bg-indigo-500',
+    icon: 'B',
     upiScheme: 'upi://pay',
-    merchantUPI: 'anujvelani6@oksbi'
   },
   razorpay: {
-    name: 'Razorpay',
+    name: 'Card / More',
     icon: '💳',
-    color: 'bg-blue-600',
-    upiScheme: null, // Uses modal instead of redirect
-    merchantUPI: null
+    upiScheme: null, // This uses the Razorpay modal
   }
 };
 
@@ -55,14 +43,14 @@ export const generateUPILink = (appId, orderData) => {
   const amount = orderData.amount / 100; // Convert from paise to rupees
   const orderId = orderData.orderId;
   
-  // Generate UPI payment link with proper parameters
+  // Construct a standard UPI payment link
   const upiParams = new URLSearchParams({
-    pa: app.merchantUPI || MERCHANT_UPI_ID, // Payee UPI ID
-    pn: 'Rewear', // Payee name
-    am: amount.toString(), // Amount
-    tn: `Points Purchase ${orderId}`, // Transaction note
-    cu: 'INR', // Currency
-    tr: orderId // Transaction reference
+    pa: MERCHANT_UPI_ID,                 // Payee Address (Your UPI ID)
+    pn: 'Rewear',                        // Payee Name
+    am: amount.toString(),               // Amount
+    cu: 'INR',                           // Currency
+    tr: orderId,                         // Transaction Reference (Crucial for tracking)
+    tn: `Purchase ${amount} points for Rewear`, // Transaction Note
   });
 
   return `${app.upiScheme}?${upiParams.toString()}`;
