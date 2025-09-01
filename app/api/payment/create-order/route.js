@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import connectDB from '@/utils/db';
 import Transaction from '@/models/Transaction';
+import rewear_User from '@/models/User'; // Import the User model
 import { cookies } from 'next/headers';
 
 async function getSessionUser() {
@@ -26,12 +27,20 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Payment gateway is not configured.' }, { status: 500 });
     }
 
-    // 2. Connect to DB and Get User
+    // 2. Connect to DB and Get User from Session
     await connectDB();
     const sessionUser = await getSessionUser();
     if (!sessionUser?.email) {
       return NextResponse.json({ error: 'Unauthorized. Please log in again.' }, { status: 401 });
     }
+
+    // --- FIX STARTS HERE ---
+    // Fetch the full user document from the database to get the _id
+    const user = await rewear_User.findOne({ email: sessionUser.email });
+    if (!user) {
+      return NextResponse.json({ error: 'Authenticated user not found in database.' }, { status: 404 });
+    }
+    // --- FIX ENDS HERE ---
 
     // 3. Parse and Validate Request Body
     const { points, paymentMethod } = await req.json();
@@ -61,15 +70,15 @@ export async function POST(req) {
     const razorpayOrder = await razorpay.orders.create(orderOptions);
     console.log('Successfully created Razorpay Order ID:', razorpayOrder.id);
 
-    // 5. Create a Pending Transaction Record in DB
+    // 5. Create a Pending Transaction Record in DB using the fetched user's ID
     const transaction = await Transaction.create({
-      userId: sessionUser._id || sessionUser.id,
+      userId: user._id, // Use the ID from the user document found in the database
       type: 'purchase',
       amount: points, // Store amount in rupees
       points: points,
       status: 'pending',
-      paymentMethod: paymentMethod, // Store the original selected app (e.g., 'gpay')
-      razorpayOrderId: razorpayOrder.id, // Link to the Razorpay order
+      paymentMethod: paymentMethod, 
+      razorpayOrderId: razorpayOrder.id, 
       description: `Purchase of ${points} points via ${paymentMethod}`,
     });
     
