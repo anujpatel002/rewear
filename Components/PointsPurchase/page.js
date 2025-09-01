@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 import QRCode from 'qrcode';
 import { PAYMENT_APPS, generateUPILink } from '@/config/payment-apps';
 import { useSession } from '@/context/SessionContext';
-import './PointsPurchase.css'; // Make sure this CSS file exists and is styled
+
 
 // --- New Component for QR Code Display with Timer and Instructions ---
 const QRCodeDisplay = ({ upiLink, amount, appName, onTimerEnd }) => {
