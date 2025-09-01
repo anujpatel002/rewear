@@ -5,29 +5,9 @@ export const MERCHANT_UPI_ID = 'anujvelani6@oksbi';
 
 export const PAYMENT_APPS = {
   gpay: {
-    name: 'Google Pay',
-    icon: 'G', // Using simple text icons for broad compatibility
+    name: 'UPI APP',
+    icon: 'U', // Using simple text icons for broad compatibility
     upiScheme: 'upi://pay', 
-  },
-  phonepe: {
-    name: 'PhonePe',
-    icon: 'P',
-    upiScheme: 'upi://pay',
-  },
-  paytm: {
-    name: 'Paytm',
-    icon: 'Pa',
-    upiScheme: 'upi://pay',
-  },
-  amazonpay: {
-    name: 'Amazon Pay',
-    icon: 'A',
-    upiScheme: 'upi://pay',
-  },
-  bhim: {
-    name: 'BHIM UPI',
-    icon: 'B',
-    upiScheme: 'upi://pay',
   },
   razorpay: {
     name: 'Card / More',

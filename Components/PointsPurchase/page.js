@@ -159,8 +159,8 @@ export default function PointsPurchase() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {pointsOptions.map((p) => (
             <button key={p} onClick={() => setPoints(p)} className={`p-3 rounded-lg border-2 text-center transition-all ${points === p ? 'border-emerald-500 bg-emerald-100 ring-2 ring-emerald-200' : 'border-gray-200 bg-white hover:bg-emerald-50'}`}>
-              <div className="font-bold">{p} pts</div>
-              <div className="text-sm">₹{p}</div>
+              <div className="font-bold text-black">{p} pts</div>
+              <div className="text-sm text-black">₹{p}</div>
             </button>
           ))}
         </div>
@@ -172,8 +172,8 @@ export default function PointsPurchase() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {Object.entries(PAYMENT_APPS).map(([id, app]) => (
             <button key={id} onClick={() => setSelectedPaymentApp(id)} className={`p-3 rounded-lg border-2 flex items-center gap-2 transition-all ${selectedPaymentApp === id ? 'border-emerald-500 bg-emerald-100 ring-2 ring-emerald-200' : 'border-gray-200 bg-white hover:bg-emerald-50'}`}>
-              <span className="text-xl">{app.icon}</span>
-              <span className="font-medium">{app.name}</span>
+              <span className="text-xl text-black">{app.icon}</span>
+              <span className="font-medium text-black">{app.name}</span>
             </button>
           ))}
         </div>
